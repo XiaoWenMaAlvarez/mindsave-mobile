@@ -1,4 +1,4 @@
-﻿import 'package:mindsave/auth/domain/domain.dart';
+import 'package:mindsave/auth/domain/domain.dart';
 
 class AuthRepositoriesImpl extends AuthRepository {
   final AuthDatasource datasource;
@@ -23,5 +23,10 @@ class AuthRepositoriesImpl extends AuthRepository {
   @override
   Future<String?> resetPassword(String email) {
     return datasource.resetPassword(email);
+  }
+
+  @override
+  Future<String?> resendValidationEmail(String email) {
+    return datasource.resendValidationEmail(email);
   }
 }

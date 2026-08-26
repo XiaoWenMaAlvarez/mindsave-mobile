@@ -124,6 +124,16 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<String?> resendValidationEmail(String email) async {
+    try {
+      return await authRepository.resendValidationEmail(email);
+    } on ConnectionTimeout {
+      return "Conexión perdida";
+    } catch (_) {
+      return "Error al reenviar el correo de activación";
+    }
+  }
+
   Future<void> checkAuthStatus() async {
     state = state.copyWith(
       authStatus: AuthStatus.checking,

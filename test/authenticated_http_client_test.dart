@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -322,6 +322,9 @@ class _SessionAuthRepository implements AuthRepository {
 
   @override
   Future<String?> resetPassword(String email) async => null;
+
+  @override
+  Future<String?> resendValidationEmail(String email) async => null;
 }
 
 class _MemoryStorage implements LocalStorageService {

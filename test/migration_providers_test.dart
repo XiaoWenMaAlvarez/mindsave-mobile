@@ -260,6 +260,9 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<String?> resetPassword(String email) async => null;
+
+  @override
+  Future<String?> resendValidationEmail(String email) async => null;
 }
 
 class _FakeLocalStorageService implements LocalStorageService {

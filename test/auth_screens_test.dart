@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,11 +49,35 @@ void main() {
     expect(find.text('Recuperar contraseña'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.pumpWidget(_testApp(const SuccessfulRegisterScreen()));
+    await tester.pumpWidget(
+      _testApp(const SuccessfulRegisterScreen(email: 'test@example.com')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Cuenta creada con éxito'), findsOneWidget);
     expect(find.text('Revisa tu bandeja de entrada'), findsOneWidget);
     expect(find.text('Reenviar'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reenviar activación utiliza el correo registrado', (
+    tester,
+  ) async {
+    final repository = _FakeAuthRepository();
+    await tester.pumpWidget(
+      _testApp(
+        const SuccessfulRegisterScreen(email: 'test@example.com'),
+        repository: repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Reenviar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reenviar'));
+    await tester.pumpAndSettle();
+
+    expect(repository.resentValidationEmails, ['test@example.com']);
+    expect(find.text('Correo de activación reenviado.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -120,10 +144,12 @@ void main() {
   });
 }
 
-Widget _testApp(Widget home) {
+Widget _testApp(Widget home, {AuthRepository? repository}) {
   return ProviderScope(
     overrides: [
-      authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
+      authRepositoryProvider.overrideWithValue(
+        repository ?? _FakeAuthRepository(),
+      ),
       localStorageServiceProvider.overrideWithValue(_FakeLocalStorageService()),
     ],
     child: MaterialApp(
@@ -147,6 +173,7 @@ class _FakeAuthRepository implements AuthRepository {
     password: '',
     token: 'token',
   );
+  final List<String> resentValidationEmails = [];
 
   @override
   Future<User> checkAuthStatus(String token) async => user;
@@ -160,6 +187,12 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<String?> resetPassword(String email) async => null;
+
+  @override
+  Future<String?> resendValidationEmail(String email) async {
+    resentValidationEmails.add(email);
+    return null;
+  }
 }
 
 class _FakeLocalStorageService implements LocalStorageService {
@@ -194,6 +227,10 @@ class _RetryingAuthRepository implements AuthRepository {
 
   @override
   Future<String?> resetPassword(String email) => throw UnimplementedError();
+
+  @override
+  Future<String?> resendValidationEmail(String email) =>
+      throw UnimplementedError();
 }
 
 class _TokenLocalStorageService implements LocalStorageService {

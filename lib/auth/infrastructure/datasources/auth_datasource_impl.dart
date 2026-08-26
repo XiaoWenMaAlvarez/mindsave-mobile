@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:mindsave/auth/domain/domain.dart';
 import 'package:mindsave/auth/infrastructure/errors/auth_errors.dart';
 import 'package:mindsave/config/constants/environment.dart';
@@ -90,6 +90,31 @@ class AuthDatasourceImpl extends AuthDatasource {
       }
       return defaultErrorMessage;
     } catch (e) {
+      return defaultErrorMessage;
+    }
+  }
+
+  @override
+  Future<String?> resendValidationEmail(String email) async {
+    const defaultErrorMessage =
+        "Error al intentar reenviar el correo de activación";
+    try {
+      await dio.post(
+        "/api/auth/resend-validation-email",
+        data: {"email": email},
+      );
+      return null;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout) {
+        return "Conexión perdida";
+      }
+      final responseData = e.response?.data;
+      if (responseData is Map && responseData["error"] is String) {
+        final error = (responseData["error"] as String).trim();
+        if (error.isNotEmpty) return error;
+      }
+      return defaultErrorMessage;
+    } catch (_) {
       return defaultErrorMessage;
     }
   }

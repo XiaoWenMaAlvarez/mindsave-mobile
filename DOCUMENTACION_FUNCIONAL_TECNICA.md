@@ -46,7 +46,7 @@ La aplicación está orientada al autocuidado y seguimiento de salud mental. Imp
 
 | Actor | Capacidades |
 |---|---|
-| Visitante no autenticado | Iniciar sesión, crear una cuenta, solicitar restablecimiento de contraseña y consultar la confirmación de registro. |
+| Visitante no autenticado | Iniciar sesión, crear una cuenta, reenviar el correo de activación, solicitar restablecimiento de contraseña y consultar la confirmación de registro. |
 | Usuario autenticado | Acceder al inicio, cambiar el tema, cerrar sesión, realizar y consultar tests diarios, crear y completar registros CBT, exportar resultados, crear y usar chats asistidos por IA y adjuntar imágenes. |
 
 No existe un rol administrativo, profesional clínico o cuidador en el cliente. Tampoco hay funcionalidad para compartir directamente resultados con otra cuenta.
@@ -67,6 +67,7 @@ No existe un rol administrativo, profesional clínico o cuidador en el cliente. 
 |---|---|---|
 | Autenticación | Inicio de sesión | Implementado y conectado |
 | Autenticación | Registro de usuario y activación por correo | Registro implementado; la activación ocurre fuera de la app |
+| Autenticación | Reenvío del correo de activación | Implementado desde la confirmación de registro |
 | Autenticación | Restablecimiento de contraseña | Solicitud implementada; el cambio final ocurre fuera de la app |
 | Autenticación | Recuperación automática de sesión | Implementado mediante token local y validación remota |
 | Autenticación | Cierre de sesión | Implementado; puede iniciarse manualmente o automáticamente ante HTTP 401 y elimina el token local |
@@ -174,7 +175,7 @@ Reglas de redirección:
 | `/splash` | `CheckAuthStatusScreen` | Validar sesión o permitir reintento ante error de conexión. |
 | `/login` | `LoginScreen` | Inicio de sesión. |
 | `/register` | `RegisterScreen` | Creación de cuenta. |
-| `/successful-register` | `SuccessfulRegisterScreen` | Informar activación pendiente por correo. |
+| `/successful-register` | `SuccessfulRegisterScreen` | Informar activación pendiente y permitir reenviar el correo al email registrado. |
 | `/forgot-password` | `ForgotPasswordScreen` | Solicitar recuperación de contraseña. |
 | `/home` | `HomeScreen` | Inicio personalizado y accesos rápidos. |
 | `/registros` | `RegistrosScreen` | Registros CBT pendientes y completados. |
@@ -275,9 +276,9 @@ La caché es solo de memoria: no constituye almacenamiento offline persistente.
 
 **Validación local:** correo válido, nombre mínimo de dos caracteres, contraseña mínima de seis caracteres y coincidencia de contraseñas.
 
-**Procesamiento:** `POST /api/auth/register` con `{email, password, name}`. HTTP 201 representa éxito y conduce a `/successful-register`. HTTP 400 puede devolver `response.data["error"]`, que se muestra al usuario.
+**Procesamiento:** `POST /api/auth/register` con `{email, password, name}`. HTTP 201 representa éxito y conduce a `/successful-register`, transportando el correo registrado mediante `GoRouterState.extra`. HTTP 400 puede devolver `response.data["error"]`, que se muestra al usuario.
 
-La pantalla de éxito indica que se envió un correo de activación. El botón etiquetado “Reenviar” **no realiza una solicitud de reenvío**: solo muestra una sugerencia para revisar spam o correo no deseado.
+La pantalla de éxito conserva el correo recibido desde el registro y lo presenta como destino del mensaje de activación. Al pulsar “Reenviar”, deshabilita temporalmente el botón, invoca `AuthNotifier.resendValidationEmail` y envía `POST /api/auth/resend-validation-email` con `{email}`. Una respuesta exitosa muestra “Correo de activación reenviado.”; un fallo presenta el error devuelto por el backend cuando contiene `error`, “Conexión perdida” ante timeout o un mensaje genérico en los demás casos. Si la ruta se abre directamente sin un correo en `extra`, el reenvío no se ejecuta y se informa que no fue posible identificar la cuenta.
 
 ### 6.4 Restablecimiento de contraseña
 
@@ -816,6 +817,7 @@ Todas las rutas de test, registro y chat usan Bearer token y el cliente con cach
 | GET | `/api/auth/check-status` | Bearer token | Objeto usuario |
 | POST | `/api/auth/login` | `{email, password}` | Objeto usuario con token |
 | POST | `/api/auth/register` | `{email, password, name}` | HTTP 201 o `{error}` |
+| POST | `/api/auth/resend-validation-email` | `{email}` | Reenvía el correo de activación o devuelve `{error}` |
 | POST | `/api/auth/reset-password` | `{email}` | HTTP 200 o `{error}` |
 | POST | `/api/test-breve-estado-de-animo/` | DTO de test | HTTP 201 |
 | GET | `/api/test-breve-estado-de-animo/by-year/:year` | — | Lista de DTO de test |
@@ -902,8 +904,7 @@ Esta sección describe comportamiento observable y no debe transformarse en requ
 
 1. El selector rápido de ánimo del inicio no guarda datos.
 2. Los chips de categorías de Módulos no filtran.
-3. “Reenviar” correo de activación no llama al backend.
-4. No existe gestión de perfil, cambio de contraseña autenticado ni eliminación de cuenta.
+3. No existe gestión de perfil, cambio de contraseña autenticado ni eliminación de cuenta.
 
 ### 16.2 Tiempo y cambio de día
 
@@ -965,6 +966,7 @@ La suite cubre:
 - normalización, aislamiento, vigencia, fallback e invalidación de caché;
 - recreación del cliente por cambio de token/usuario/sesión y cierre automático ante HTTP 401;
 - validación y adaptabilidad de pantallas de autenticación;
+- reenvío del correo de activación, incluyendo endpoint y body enviados;
 - reintento de conexión;
 - providers migrados a Riverpod `Notifier`;
 - streaming y render de imágenes del chat;
@@ -974,7 +976,7 @@ La suite cubre:
 - detalle anual y modal diario en tamaño Pixel 9;
 - consulta autónoma y presentación del resultado de hoy al abrir la vista diaria.
 
-Resultado de `flutter test`: **34 pruebas exitosas y 1 fallida**.
+Resultado de `flutter test`: **36 pruebas exitosas y 1 fallida**.
 
 La falla está en `test_breve_completed_card_test.dart`: la prueba crea una evaluación a las 09:14 y espera “Respondido a las 09:14”, mientras la implementación resta cuatro horas y genera una hora diferente. Esta falla confirma la inconsistencia horaria descrita anteriormente; no es un fallo aleatorio de infraestructura.
 
@@ -1017,6 +1019,7 @@ Los siguientes casos de uso pueden derivarse directamente sin inventar capacidad
 - CU-AUT-03 Solicitar restablecimiento de contraseña.
 - CU-AUT-04 Recuperar sesión guardada.
 - CU-AUT-05 Reintentar validación de sesión sin conexión.
+- CU-AUT-06 Reenviar correo de activación.
 
 ### Usuario autenticado
 
@@ -1045,7 +1048,7 @@ Los siguientes casos de uso pueden derivarse directamente sin inventar capacidad
 - CU-CHAT-05 Recibir respuesta progresiva de IA.
 - CU-CHAT-06 Eliminar conversación.
 
-No deberían modelarse todavía como casos de uso implementados: registrar el selector rápido del inicio, filtrar módulos por chip, reenviar correo de activación, consultar una guía de externalización —no existe ruta ni pantalla para ella—, contactar automáticamente emergencias o trabajar offline.
+No deberían modelarse todavía como casos de uso implementados: registrar el selector rápido del inicio, filtrar módulos por chip, consultar una guía de externalización —no existe ruta ni pantalla para ella—, contactar automáticamente emergencias o trabajar offline.
 
 ## 20. Secuencias clave para diagramas
 

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/auth/presentation/screens/screens.dart';
@@ -66,7 +66,10 @@ final goRouterProvider = Provider((ref) {
 
       GoRoute(
         path: "/successful-register",
-        builder: (context, state) => const SuccessfulRegisterScreen(),
+        builder: (context, state) {
+          final email = state.extra;
+          return SuccessfulRegisterScreen(email: email is String ? email : '');
+        },
       ),
 
       GoRoute(

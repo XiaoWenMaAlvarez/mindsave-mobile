@@ -91,11 +91,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final email = _emailController.text.trim();
     setState(() => _isLoading = true);
     final result = await ref
         .read(authProvider.notifier)
         .registerUser(
-          _emailController.text.trim(),
+          email,
           _passwordController.text,
           _nameController.text.trim(),
         );
@@ -109,7 +110,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       return;
     }
-    context.push('/successful-register');
+    context.push('/successful-register', extra: email);
   }
 
   @override
