@@ -1,7 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/externalizacion_de_voces/domain/entities/entities.dart';
-import 'package:prueba/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/chat_ia_repository_provider.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/entities/entities.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/chat_ia_repository_provider.dart';
 
 class ChatsListState {
   static const Object _notSet = Object();

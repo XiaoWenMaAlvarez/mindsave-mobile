@@ -1,9 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'registro_estado_animo_repository_provider.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/registro_estado_animo/domain/repositories/registro_estado_animo_repository.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/registro_estado_animo/domain/repositories/registro_estado_animo_repository.dart';
 
 class RegistroEstadoAnimoState {
   final bool isLastPendientePage;

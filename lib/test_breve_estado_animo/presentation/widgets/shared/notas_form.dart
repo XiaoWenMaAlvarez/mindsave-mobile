@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:prueba/test_breve_estado_animo/domain/entities/entities.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
 
 class NotasForm extends StatefulWidget {
   final TestBreveEstadoDeAnimo testBreveEstadoDeAnimo;

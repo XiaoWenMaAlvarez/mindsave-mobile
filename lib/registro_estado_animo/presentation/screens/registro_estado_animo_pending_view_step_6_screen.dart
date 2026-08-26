@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/registro_estado_animo/presentation/providers/providers.dart';
-import 'package:prueba/registro_estado_animo/presentation/widgets/widgets.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/registro_estado_animo/presentation/providers/providers.dart';
+import 'package:mindsave/registro_estado_animo/presentation/widgets/widgets.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 class RegistroEstadoAnimoPendingViewStep6Screen extends ConsumerStatefulWidget {
   const RegistroEstadoAnimoPendingViewStep6Screen({

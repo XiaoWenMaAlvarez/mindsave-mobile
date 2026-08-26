@@ -1,7 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/config/theme/app_theme.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
-import 'package:prueba/home/infrastructure/services/services.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mindsave/config/theme/app_theme.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/home/infrastructure/services/services.dart';
 
 class ThemeNotifier extends Notifier<AppTheme> {
   late LocalStorageService _localStorageService;

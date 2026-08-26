@@ -1,10 +1,10 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
-import 'package:prueba/home/presentation/widgets/widgets.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/home/presentation/widgets/widgets.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 class CheckAuthStatusScreen extends ConsumerStatefulWidget {
   const CheckAuthStatusScreen({super.key});

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prueba/config/theme/app_theme.dart';
-import 'package:prueba/test_breve_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/widgets/widgets.dart';
+import 'package:mindsave/config/theme/app_theme.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/widgets/widgets.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

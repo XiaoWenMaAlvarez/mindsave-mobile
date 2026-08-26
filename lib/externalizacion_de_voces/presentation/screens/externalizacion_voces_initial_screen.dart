@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prueba/externalizacion_de_voces/domain/entities/entities.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/chats_list_provider.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/widgets/widgets.dart';
-import 'package:prueba/home/presentation/widgets/widgets.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/entities/entities.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/chats_list_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/widgets/widgets.dart';
+import 'package:mindsave/home/presentation/widgets/widgets.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 void _showNewChatDialog(BuildContext context, String message) {
   ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -128,9 +128,7 @@ class _InitialScreenState extends ConsumerState<_InitialScreen> {
     final isLoading = chatListState.isLoading;
 
     if (isInitialLoading || isLoading) {
-      return const MindsaveLoadingView(
-        message: 'Cargando tus conversaciones…',
-      );
+      return const MindsaveLoadingView(message: 'Cargando tus conversaciones…');
     }
 
     final error = chatListState.error;

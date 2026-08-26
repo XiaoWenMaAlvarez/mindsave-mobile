@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:prueba/registro_estado_animo/presentation/screens/registros_screen.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:mindsave/registro_estado_animo/presentation/screens/registros_screen.dart';
 
 class RegistroEstadoAnimoCompleteViewScreen extends StatelessWidget {
   const RegistroEstadoAnimoCompleteViewScreen({super.key});

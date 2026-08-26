@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/auth/infrastructure/errors/auth_errors.dart';
-import 'package:prueba/auth/infrastructure/infrastructure.dart';
+import 'package:mindsave/auth/infrastructure/errors/auth_errors.dart';
+import 'package:mindsave/auth/infrastructure/infrastructure.dart';
 
 import '../../../home/infrastructure/services/services.dart';
 import '../../domain/domain.dart';

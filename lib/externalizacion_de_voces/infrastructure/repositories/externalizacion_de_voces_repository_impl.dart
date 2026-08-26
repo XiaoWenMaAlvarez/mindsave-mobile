@@ -1,7 +1,7 @@
-import 'package:image_picker/image_picker.dart';
-import 'package:prueba/externalizacion_de_voces/domain/datasources/externalizacion_de_voces_datasource.dart';
-import 'package:prueba/externalizacion_de_voces/domain/entities/entities.dart';
-import 'package:prueba/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
+﻿import 'package:image_picker/image_picker.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/datasources/externalizacion_de_voces_datasource.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/entities/entities.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
 
 class ExternalizacionDeVocesRepositoryImpl
     extends ExternalizacionDeVocesRepository {

@@ -1,4 +1,4 @@
-import 'package:prueba/externalizacion_de_voces/domain/entities/mensaje_chat_ia.dart';
+﻿import 'package:mindsave/externalizacion_de_voces/domain/entities/mensaje_chat_ia.dart';
 
 class ChatHistoryChatIa {
   String id;

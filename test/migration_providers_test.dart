@@ -1,24 +1,24 @@
-import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
+﻿import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flyer_chat_image_message/flyer_chat_image_message.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:prueba/auth/domain/entities/user.dart' as auth;
-import 'package:prueba/auth/domain/repositories/auth_repository.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
-import 'package:prueba/externalizacion_de_voces/domain/entities/entities.dart';
-import 'package:prueba/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/chat_ia_repository_provider.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/chat_provider.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/chats_list_provider.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/user_provider.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/screens/externalizacion_voces_chat_screen.dart';
-import 'package:prueba/home/infrastructure/services/local_storage_service.dart';
-import 'package:prueba/home/presentation/providers/selected_menu_item_provider.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/providers/is_loading_provider.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/providers/selected_year_provider.dart';
+import 'package:mindsave/auth/domain/entities/user.dart' as auth;
+import 'package:mindsave/auth/domain/repositories/auth_repository.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/entities/entities.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/chat_ia_repository_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/chat_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/chats_list_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/user_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/screens/externalizacion_voces_chat_screen.dart';
+import 'package:mindsave/home/infrastructure/services/local_storage_service.dart';
+import 'package:mindsave/home/presentation/providers/selected_menu_item_provider.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/providers/is_loading_provider.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/providers/selected_year_provider.dart';
 
 void main() {
   test('AuthState permite eliminar explícitamente el usuario', () {

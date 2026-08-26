@@ -1,10 +1,10 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:prueba/externalizacion_de_voces/domain/datasources/externalizacion_de_voces_datasource.dart';
-import 'package:prueba/externalizacion_de_voces/domain/entities/entities.dart';
-import 'package:prueba/shared/infrastructure/http/authenticated_http_client.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/datasources/externalizacion_de_voces_datasource.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/entities/entities.dart';
+import 'package:mindsave/shared/infrastructure/http/authenticated_http_client.dart';
 
 class ExternalizacionDeVocesDatasourceImpl
     extends ExternalizacionDeVocesDatasource {

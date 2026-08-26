@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
 
 class GoRouterNotifier extends ChangeNotifier {
   AuthStatus _authStatus;

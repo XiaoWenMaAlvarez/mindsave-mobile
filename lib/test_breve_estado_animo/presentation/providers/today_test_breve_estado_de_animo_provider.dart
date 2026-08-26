@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/test_breve_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/providers/providers.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/providers/providers.dart';
 
 typedef GetTodayTestBreveEstadoDeAnimo =
     Future<TestBreveEstadoDeAnimo?> Function();

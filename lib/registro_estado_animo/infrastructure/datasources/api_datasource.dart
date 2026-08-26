@@ -1,8 +1,8 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:prueba/registro_estado_animo/domain/datasources/registro_estado_animo_datasource.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/shared/infrastructure/http/authenticated_http_client.dart';
+import 'package:mindsave/registro_estado_animo/domain/datasources/registro_estado_animo_datasource.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/shared/infrastructure/http/authenticated_http_client.dart';
 
 import 'package:flutter/foundation.dart';
 

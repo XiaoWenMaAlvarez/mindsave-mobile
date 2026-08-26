@@ -1,4 +1,4 @@
-import 'package:prueba/auth/domain/entities/user.dart';
+﻿import 'package:mindsave/auth/domain/entities/user.dart';
 
 abstract class AuthDatasource {
   Future<User> login(String email, String password);

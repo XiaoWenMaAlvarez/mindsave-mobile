@@ -1,9 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
-import 'package:prueba/config/constants/environment.dart';
-import 'package:prueba/shared/infrastructure/http/authenticated_http_client.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/config/constants/environment.dart';
+import 'package:mindsave/shared/infrastructure/http/authenticated_http_client.dart';
 
 final authenticatedHttpClientProvider = Provider<AuthenticatedHttpClient>((
   ref,

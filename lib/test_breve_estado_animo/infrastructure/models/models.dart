@@ -1,5 +1,5 @@
-export 'package:prueba/test_breve_estado_animo/infrastructure/models/depresion_test_breve_response.dart';
-export 'package:prueba/test_breve_estado_animo/infrastructure/models/impulso_suicida_test_breve_response.dart';
-export 'package:prueba/test_breve_estado_animo/infrastructure/models/sentimientos_ansiedad_emocional_test_breve_response.dart';
-export 'package:prueba/test_breve_estado_animo/infrastructure/models/sentimientos_ansiedad_fisica_test_breve_response.dart';
-export 'package:prueba/test_breve_estado_animo/infrastructure/models/test_breve_estado_de_animo_response.dart';
+﻿export 'package:mindsave/test_breve_estado_animo/infrastructure/models/depresion_test_breve_response.dart';
+export 'package:mindsave/test_breve_estado_animo/infrastructure/models/impulso_suicida_test_breve_response.dart';
+export 'package:mindsave/test_breve_estado_animo/infrastructure/models/sentimientos_ansiedad_emocional_test_breve_response.dart';
+export 'package:mindsave/test_breve_estado_animo/infrastructure/models/sentimientos_ansiedad_fisica_test_breve_response.dart';
+export 'package:mindsave/test_breve_estado_animo/infrastructure/models/test_breve_estado_de_animo_response.dart';

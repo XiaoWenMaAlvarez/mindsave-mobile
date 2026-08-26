@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prueba/home/presentation/widgets/widgets.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/home/presentation/widgets/widgets.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 class ModulesScreen extends StatelessWidget {
   const ModulesScreen({super.key});

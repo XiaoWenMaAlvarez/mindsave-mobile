@@ -1,9 +1,9 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 
-import 'package:prueba/shared/infrastructure/http/authenticated_http_client.dart';
-import 'package:prueba/test_breve_estado_animo/domain/datasources/test_breve_estado_de_animo_datasource.dart';
-import 'package:prueba/test_breve_estado_animo/domain/entities/test_breve_estado_de_animo.dart';
-import 'package:prueba/test_breve_estado_animo/infrastructure/models/models.dart';
+import 'package:mindsave/shared/infrastructure/http/authenticated_http_client.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/datasources/test_breve_estado_de_animo_datasource.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/test_breve_estado_de_animo.dart';
+import 'package:mindsave/test_breve_estado_animo/infrastructure/models/models.dart';
 import '../mappers/test_breve_estado_de_animo_mapper.dart';
 
 class TestBreveEstadoDeAnimoAPIDatasource

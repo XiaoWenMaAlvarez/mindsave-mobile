@@ -6,10 +6,10 @@ import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/chats_list_provider.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/providers.dart';
-import 'package:prueba/home/presentation/widgets/widgets.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/chats_list_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/providers.dart';
+import 'package:mindsave/home/presentation/widgets/widgets.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 const externalizacionChatBuilders = Builders(
   imageMessageBuilder: _buildImageMessage,
@@ -80,9 +80,7 @@ class _ChatScreenState extends ConsumerState<_ChatScreen> {
     });
 
     if (chatState.isInitialLoading) {
-      return const MindsaveLoadingView(
-        message: 'Cargando la conversación…',
-      );
+      return const MindsaveLoadingView(message: 'Cargando la conversación…');
     }
 
     return Column(

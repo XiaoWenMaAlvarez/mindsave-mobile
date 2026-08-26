@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 void main() {
   testWidgets('la barra compacta muestra cuatro destinos y el FAB CBT', (

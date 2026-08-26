@@ -1,5 +1,5 @@
-import 'package:image_picker/image_picker.dart';
-import 'package:prueba/externalizacion_de_voces/domain/entities/entities.dart';
+﻿import 'package:image_picker/image_picker.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/entities/entities.dart';
 
 abstract class ExternalizacionDeVocesRepository {
   Future<ChatHistoryChatIa> createNewChat(String title);

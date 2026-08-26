@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
-import 'package:prueba/test_breve_estado_animo/domain/entities/entities.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
 
 class TestBreveCompletedCard extends StatelessWidget {
   const TestBreveCompletedCard({

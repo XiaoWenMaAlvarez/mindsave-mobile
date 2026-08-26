@@ -28,7 +28,7 @@ La descripción corresponde al estado observado del repositorio el **25 de agost
 | Producto mostrado al usuario | MindSave / Mind Save |
 | Tipo de aplicación | Aplicación móvil Flutter |
 | Plataformas presentes | Android e iOS |
-| Paquete del proyecto | `prueba` |
+| Paquete del proyecto | `mindsave` |
 | Versión declarada | `0.1.0+1` |
 | SDK Dart requerido | `^3.12.2` |
 | Canal Flutter registrado | `stable` |
@@ -935,9 +935,9 @@ Esta sección describe comportamiento observable y no debe transformarse en requ
 
 1. El token se guarda sin `flutter_secure_storage` ni mecanismo equivalente.
 2. El manifest Android principal no declara `INTERNET`; la declaración existe solo en `debug` y `profile`, por lo que una compilación release puede carecer de permiso de red.
-3. La configuración release Android firma con claves debug y conserva `applicationId = com.example.prueba`.
+3. La configuración release Android firma con claves debug; el identificador está configurado como `applicationId = com.mindsave.app`.
 4. `Info.plist` no declara descripciones de uso de galería/fotos requeridas habitualmente por `image_picker` en iOS.
-5. Los nombres visibles de Android/iOS siguen siendo “prueba”/“Prueba”.
+5. Los nombres visibles de Android/iOS están configurados como “Mindsave”.
 6. No se observa certificate pinning, cifrado de payload a nivel de aplicación ni sanitización clínica específica.
 7. `.env` se declara como asset de Flutter. Es apropiado para una URL base, pero cualquier secreto añadido allí quedaría incluido en el paquete distribuido.
 8. La entidad `User` contiene y serializa un campo `password`, aunque el flujo de sesión normalmente lo construye vacío y no lo persiste; mantener credenciales en una entidad de sesión amplía innecesariamente el modelo sensible.

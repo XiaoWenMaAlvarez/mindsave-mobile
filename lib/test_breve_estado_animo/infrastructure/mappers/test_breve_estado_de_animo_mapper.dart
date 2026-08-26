@@ -1,5 +1,5 @@
-import 'package:prueba/test_breve_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/test_breve_estado_animo/infrastructure/models/models.dart';
+﻿import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/test_breve_estado_animo/infrastructure/models/models.dart';
 
 class TestBreveEstadoDeAnimoMapper {
   static TestBreveEstadoDeAnimo testBreveEstadoDeAnimoResponseToEntity(

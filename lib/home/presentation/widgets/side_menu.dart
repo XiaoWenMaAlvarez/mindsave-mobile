@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
-import 'package:prueba/config/menu/menu_items.dart';
-import 'package:prueba/home/presentation/providers/providers.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/config/menu/menu_items.dart';
+import 'package:mindsave/home/presentation/providers/providers.dart';
 
 class SideMenu extends ConsumerStatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;

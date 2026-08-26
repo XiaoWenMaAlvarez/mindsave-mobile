@@ -1,18 +1,18 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prueba/auth/domain/entities/user.dart';
-import 'package:prueba/auth/domain/repositories/auth_repository.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
-import 'package:prueba/auth/presentation/screens/check_auth_status_screen.dart';
-import 'package:prueba/auth/presentation/screens/forgot_password_screen.dart';
-import 'package:prueba/auth/presentation/screens/login_screen.dart';
-import 'package:prueba/auth/presentation/screens/register_screen.dart';
-import 'package:prueba/auth/presentation/screens/successful_register_screen.dart';
-import 'package:prueba/config/theme/app_theme.dart';
-import 'package:prueba/home/infrastructure/services/local_storage_service.dart';
+import 'package:mindsave/auth/domain/entities/user.dart';
+import 'package:mindsave/auth/domain/repositories/auth_repository.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/auth/presentation/screens/check_auth_status_screen.dart';
+import 'package:mindsave/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:mindsave/auth/presentation/screens/login_screen.dart';
+import 'package:mindsave/auth/presentation/screens/register_screen.dart';
+import 'package:mindsave/auth/presentation/screens/successful_register_screen.dart';
+import 'package:mindsave/config/theme/app_theme.dart';
+import 'package:mindsave/home/infrastructure/services/local_storage_service.dart';
 
 void main() {
   setUp(() {

@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 
 class CustomFormPensamientoPositivo extends StatefulWidget {
   const CustomFormPensamientoPositivo({

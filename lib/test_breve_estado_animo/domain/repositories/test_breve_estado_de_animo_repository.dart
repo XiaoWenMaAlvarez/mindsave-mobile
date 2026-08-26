@@ -1,4 +1,4 @@
-import 'package:prueba/test_breve_estado_animo/domain/entities/test_breve_estado_de_animo.dart';
+﻿import 'package:mindsave/test_breve_estado_animo/domain/entities/test_breve_estado_de_animo.dart';
 
 abstract class TestBreveEstadoDeAnimoRepository {
   //CRUD

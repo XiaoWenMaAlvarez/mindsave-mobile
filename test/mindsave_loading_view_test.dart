@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prueba/config/theme/app_theme.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/config/theme/app_theme.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 void main() {
   testWidgets('la pantalla de carga reproduce el diseño en tamaño Pixel 9', (

@@ -1,6 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/registro_estado_animo/presentation/providers/providers.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/registro_estado_animo/presentation/providers/providers.dart';
 
 typedef CrearRegistroEstadoDeAnimo =
     Future<void> Function(RegistroEstadoAnimo registroEstadoAnimo);

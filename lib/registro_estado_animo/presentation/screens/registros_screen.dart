@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prueba/config/helpers/date_helper.dart';
-import 'package:prueba/home/presentation/widgets/widgets.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/registro_estado_animo/presentation/providers/providers.dart';
-import 'package:prueba/registro_estado_animo/presentation/widgets/cbt_flow_layout.dart';
-import 'package:prueba/shared/presentation/widgets/mindsave_ui.dart';
+import 'package:mindsave/config/helpers/date_helper.dart';
+import 'package:mindsave/home/presentation/widgets/widgets.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/registro_estado_animo/presentation/providers/providers.dart';
+import 'package:mindsave/registro_estado_animo/presentation/widgets/cbt_flow_layout.dart';
+import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
 enum RecordsTab { pending, completed }
 

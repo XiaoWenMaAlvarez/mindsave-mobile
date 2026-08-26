@@ -6,9 +6,8 @@ Estas instrucciones se aplican a todo el repositorio. Si aparece un `AGENTS.md`
 en un subdirectorio, el archivo más cercano al código modificado tiene prioridad
 en ese ámbito.
 
-- El producto se presenta como **Mind Save** o **Mindsave**, pero el paquete Dart
-  aún se llama `prueba`. Conserva los imports `package:prueba/...` hasta que exista
-  una migración explícita y completa del nombre.
+- El producto se presenta como **Mind Save** o **Mindsave**, y el paquete Dart
+  se llama `mindsave`. Usa los imports `package:mindsave/...`.
 - El código, `pubspec.yaml`, `analysis_options.yaml` y los tests son la fuente de
   verdad. `README.md` todavía es el placeholder de Flutter y no describe el
   producto.
@@ -217,7 +216,7 @@ Al tocar red:
 
 - Usa `snake_case.dart`, `UpperCamelCase` para tipos y `lowerCamelCase` para
   miembros.
-- Prefiere imports `package:prueba/...` entre módulos. Al exponer APIs de un
+- Prefiere imports `package:mindsave/...` entre módulos. Al exponer APIs de un
   módulo, actualiza sus barrel files (`screens.dart`, `providers.dart`,
   `widgets.dart`, `entities.dart`) si corresponde.
 - Sigue `flutter_lints`; resuelve advertencias localmente y no desactives reglas
@@ -261,13 +260,10 @@ renderizado sin overflow al cambiar UI.
 
 ## Limitaciones conocidas
 
-- `README.md`, el nombre nativo, `applicationId`/namespace Android y la firma
-  release conservan valores de plantilla (`prueba`, `Prueba`,
-  `com.example.prueba` o clave debug).
+- `README.md` conserva valores de plantilla generados por Flutter.
 - No hay CI visible, pruebas de integración ni umbral automatizado de cobertura.
 - Los datasources locales no forman parte del grafo activo de providers.
-- La configuración nativa de release no está lista para producción hasta definir
-  identificadores, firma y configuración por entorno.
+- La configuración nativa de release requiere configurar firma de producción y entorno antes del despliegue.
 
 No corrijas estas limitaciones de forma incidental: trátalas como tareas separadas
 con alcance y validación propios.

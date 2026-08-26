@@ -1,4 +1,4 @@
-import 'package:prueba/auth/domain/domain.dart';
+﻿import 'package:mindsave/auth/domain/domain.dart';
 
 class AuthRepositoriesImpl extends AuthRepository {
   final AuthDatasource datasource;

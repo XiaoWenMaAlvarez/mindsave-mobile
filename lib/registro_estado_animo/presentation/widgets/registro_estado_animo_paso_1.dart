@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 
 class RegistroEstadoAnimoPaso1 extends StatefulWidget {
   final RegistroEstadoAnimo registroEstadoAnimo;

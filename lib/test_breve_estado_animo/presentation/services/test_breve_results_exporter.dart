@@ -1,9 +1,9 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:prueba/test_breve_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
 
 class TestBreveExportFile {
   const TestBreveExportFile({

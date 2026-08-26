@@ -1,6 +1,6 @@
-import 'package:prueba/registro_estado_animo/domain/datasources/registro_estado_animo_datasource.dart';
-import 'package:prueba/registro_estado_animo/domain/entities/registro_estado_animo.dart';
-import 'package:prueba/registro_estado_animo/domain/repositories/registro_estado_animo_repository.dart';
+﻿import 'package:mindsave/registro_estado_animo/domain/datasources/registro_estado_animo_datasource.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/registro_estado_animo.dart';
+import 'package:mindsave/registro_estado_animo/domain/repositories/registro_estado_animo_repository.dart';
 
 class RegistroEstadoAnimoRepositoryImpl extends RegistroEstadoAnimoRepository {
   final RegistroEstadoAnimoDatasource datasource;

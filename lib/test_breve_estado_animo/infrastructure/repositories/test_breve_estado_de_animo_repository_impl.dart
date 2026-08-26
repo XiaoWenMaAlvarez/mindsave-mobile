@@ -1,6 +1,6 @@
-import 'package:prueba/test_breve_estado_animo/domain/datasources/test_breve_estado_de_animo_datasource.dart';
-import 'package:prueba/test_breve_estado_animo/domain/entities/test_breve_estado_de_animo.dart';
-import 'package:prueba/test_breve_estado_animo/domain/repositories/test_breve_estado_de_animo_repository.dart';
+﻿import 'package:mindsave/test_breve_estado_animo/domain/datasources/test_breve_estado_de_animo_datasource.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/test_breve_estado_de_animo.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/repositories/test_breve_estado_de_animo_repository.dart';
 
 class TestBreveEstadoDeAnimoRepositoryImpl
     extends TestBreveEstadoDeAnimoRepository {

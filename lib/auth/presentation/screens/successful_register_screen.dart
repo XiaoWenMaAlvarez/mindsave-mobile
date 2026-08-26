@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prueba/auth/presentation/widgets/auth_scaffold.dart';
+import 'package:mindsave/auth/presentation/widgets/auth_scaffold.dart';
 
 class SuccessfulRegisterScreen extends StatelessWidget {
   const SuccessfulRegisterScreen({super.key});

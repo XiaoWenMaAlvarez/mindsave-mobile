@@ -1,11 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:prueba/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/chat_ia_repository_provider.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/providers/user_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/chat_ia_repository_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/providers/user_provider.dart';
 
 class ChatState {
   static const Object _notSet = Object();

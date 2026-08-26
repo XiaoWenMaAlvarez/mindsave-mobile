@@ -1,9 +1,9 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:prueba/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 
 class CbtRecordExportFile {
   const CbtRecordExportFile({

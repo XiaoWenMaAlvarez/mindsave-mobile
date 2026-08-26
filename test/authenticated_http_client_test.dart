@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -6,13 +6,13 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prueba/auth/domain/entities/user.dart';
-import 'package:prueba/auth/domain/repositories/auth_repository.dart';
-import 'package:prueba/auth/presentation/providers/auth_provider.dart';
-import 'package:prueba/externalizacion_de_voces/infrastructure/datasources/externalizacion_de_voces_datasource_impl.dart';
-import 'package:prueba/home/infrastructure/services/local_storage_service.dart';
-import 'package:prueba/shared/infrastructure/http/authenticated_http_client.dart';
-import 'package:prueba/shared/presentation/providers/authenticated_http_client_provider.dart';
+import 'package:mindsave/auth/domain/entities/user.dart';
+import 'package:mindsave/auth/domain/repositories/auth_repository.dart';
+import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
+import 'package:mindsave/externalizacion_de_voces/infrastructure/datasources/externalizacion_de_voces_datasource_impl.dart';
+import 'package:mindsave/home/infrastructure/services/local_storage_service.dart';
+import 'package:mindsave/shared/infrastructure/http/authenticated_http_client.dart';
+import 'package:mindsave/shared/presentation/providers/authenticated_http_client_provider.dart';
 
 void main() {
   dotenv.loadFromString(envString: 'API_URL_BASE=https://api.example.com');

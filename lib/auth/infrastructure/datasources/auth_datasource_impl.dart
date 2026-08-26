@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
-import 'package:prueba/auth/domain/domain.dart';
-import 'package:prueba/auth/infrastructure/errors/auth_errors.dart';
-import 'package:prueba/config/constants/environment.dart';
+﻿import 'package:dio/dio.dart';
+import 'package:mindsave/auth/domain/domain.dart';
+import 'package:mindsave/auth/infrastructure/errors/auth_errors.dart';
+import 'package:mindsave/config/constants/environment.dart';
 
 class AuthDatasourceImpl extends AuthDatasource {
   late final Dio dio;

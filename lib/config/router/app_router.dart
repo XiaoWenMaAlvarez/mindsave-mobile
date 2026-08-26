@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prueba/auth/presentation/screens/screens.dart';
-import 'package:prueba/config/router/app_router_notifier.dart';
-import 'package:prueba/externalizacion_de_voces/presentation/screens/screens.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/screens/screens.dart';
-import 'package:prueba/home/presentation/screens/screens.dart';
-import 'package:prueba/registro_estado_animo/presentation/screens/screens.dart';
+import 'package:mindsave/auth/presentation/screens/screens.dart';
+import 'package:mindsave/config/router/app_router_notifier.dart';
+import 'package:mindsave/externalizacion_de_voces/presentation/screens/screens.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/screens/screens.dart';
+import 'package:mindsave/home/presentation/screens/screens.dart';
+import 'package:mindsave/registro_estado_animo/presentation/screens/screens.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 
 List<String> noAuthRequiredPaths = [

@@ -1,16 +1,16 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prueba/config/theme/app_theme.dart';
-import 'package:prueba/test_breve_estado_animo/domain/entities/entities.dart';
-import 'package:prueba/test_breve_estado_animo/domain/repositories/test_breve_estado_de_animo_repository.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/providers/providers.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/screens/test_breve_estado_animo_daily_results_screen.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/screens/test_breve_estado_animo_details_year_results_screen.dart';
-import 'package:prueba/test_breve_estado_animo/presentation/services/test_breve_results_exporter.dart';
+import 'package:mindsave/config/theme/app_theme.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/test_breve_estado_animo/domain/repositories/test_breve_estado_de_animo_repository.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/providers/providers.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/screens/test_breve_estado_animo_daily_results_screen.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/screens/test_breve_estado_animo_details_year_results_screen.dart';
+import 'package:mindsave/test_breve_estado_animo/presentation/services/test_breve_results_exporter.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

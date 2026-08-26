@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:prueba/config/router/app_router.dart';
-import 'package:prueba/config/theme/app_theme.dart';
+import 'package:mindsave/config/router/app_router.dart';
+import 'package:mindsave/config/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prueba/home/presentation/providers/providers.dart';
+import 'package:mindsave/home/presentation/providers/providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +32,7 @@ class _MainAppState extends ConsumerState<MainApp> {
     final AppTheme appTheme = ref.watch(themeProvider);
 
     return MaterialApp.router(
-      title: 'Mind Save',
+      title: 'Mindsave',
       debugShowCheckedModeBanner: false,
       routerConfig: ref.watch(goRouterProvider),
       theme: appTheme.getTheme(),
