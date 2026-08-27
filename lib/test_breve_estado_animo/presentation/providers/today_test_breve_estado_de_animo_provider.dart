@@ -12,9 +12,11 @@ class TodayTestBreveEstadoDeAnimoNotifier
   Timer? _timer;
   late GetTodayTestBreveEstadoDeAnimo _getTodayTestBreveEstadoDeAnimo;
   late SetIsLoading _setIsLoading;
+  int _generation = 0;
 
   @override
   TestBreveEstadoDeAnimo? build() {
+    _generation++;
     _getTodayTestBreveEstadoDeAnimo = ref
         .watch(testBreveEstadoDeAnimoRepositoryProvider)
         .getTodayTestBreveEstadoDeAnimo;
@@ -24,6 +26,8 @@ class TodayTestBreveEstadoDeAnimoNotifier
     return null;
   }
 
+  bool _isCurrent(int generation) => ref.mounted && generation == _generation;
+
   bool _isSameDay(DateTime a, DateTime b) {
     final localA = a.toLocal();
     final localB = b.toLocal();
@@ -32,17 +36,26 @@ class TodayTestBreveEstadoDeAnimoNotifier
         localA.day == localB.day;
   }
 
-  Future<void> setTestBreveRealizadoHoy({bool forceRefresh = false}) async {
+  Future<String?> setTestBreveRealizadoHoy({bool forceRefresh = false}) async {
     final current = state;
     final now = DateTime.now();
     if (!forceRefresh &&
         current != null &&
         _isSameDay(current.fechaCreacion, now)) {
-      return;
+      return null;
     }
+    final generation = _generation;
+    final getToday = _getTodayTestBreveEstadoDeAnimo;
     _setIsLoading(true);
     try {
-      state = await _getTodayTestBreveEstadoDeAnimo();
+      final result = await getToday();
+      if (!_isCurrent(generation)) return null;
+      state = result;
+      return null;
+    } catch (_) {
+      return _isCurrent(generation)
+          ? 'No se pudo consultar la evaluación de hoy. Inténtalo nuevamente.'
+          : null;
     } finally {
       _setIsLoading(false);
     }
@@ -64,14 +77,19 @@ class TodayTestBreveEstadoDeAnimoNotifier
     final durationUntilMidnight = nextMidnight.difference(now);
 
     if (durationUntilMidnight > Duration.zero) {
+      final generation = _generation;
+      final getToday = _getTodayTestBreveEstadoDeAnimo;
       _timer = Timer(durationUntilMidnight, () async {
+        if (!_isCurrent(generation)) return;
         state = null;
         try {
-          state = await _getTodayTestBreveEstadoDeAnimo();
+          final result = await getToday();
+          if (!_isCurrent(generation)) return;
+          state = result;
         } catch (_) {
-          state = null;
+          if (_isCurrent(generation)) state = null;
         }
-        scheduleNextMidnightCheck();
+        if (_isCurrent(generation)) scheduleNextMidnightCheck();
       });
     }
   }

@@ -24,7 +24,7 @@ bool isNotAuthRequired(String path) {
 final goRouterProvider = Provider((ref) {
   final goRouterNotifier = ref.watch(goRouterNotifierProvider);
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: "/splash",
 
     refreshListenable: goRouterNotifier,
@@ -83,7 +83,7 @@ final goRouterProvider = Provider((ref) {
         path: "/registros",
         builder: (context, state) => const RegistrosScreen(),
       ),
-      
+
       GoRoute(
         path: "/testBreveEstadoAnimo/0",
         builder: (context, state) {
@@ -199,4 +199,6 @@ final goRouterProvider = Provider((ref) {
       ),
     ],
   );
+  ref.onDispose(router.dispose);
+  return router;
 });

@@ -12,14 +12,22 @@ void _showNewChatDialog(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
-class ExternalizacionVocesInitialScreen extends ConsumerWidget {
+class ExternalizacionVocesInitialScreen extends ConsumerStatefulWidget {
   const ExternalizacionVocesInitialScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scaffoldKey = GlobalKey<ScaffoldState>();
+  ConsumerState<ExternalizacionVocesInitialScreen> createState() =>
+      _ExternalizacionVocesInitialScreenState();
+}
+
+class _ExternalizacionVocesInitialScreenState
+    extends ConsumerState<ExternalizacionVocesInitialScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      key: scaffoldKey,
+      key: _scaffoldKey,
       appBar: AppBar(titleSpacing: 20, title: const CustomAppbar()),
       body: _ExternalizacionVocesBody(),
       floatingActionButton: FloatingActionButton.extended(
@@ -30,7 +38,7 @@ class ExternalizacionVocesInitialScreen extends ConsumerWidget {
         label: const Text('Nuevo chat'),
       ),
       bottomNavigationBar: CustomBottomNavigation(currentIndex: 0),
-      endDrawer: SideMenu(scaffoldKey: scaffoldKey),
+      endDrawer: SideMenu(scaffoldKey: _scaffoldKey),
     );
   }
 
@@ -114,10 +122,11 @@ class _InitialScreen extends ConsumerStatefulWidget {
 class _InitialScreenState extends ConsumerState<_InitialScreen> {
   @override
   void initState() {
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(chatListProvider.notifier).loadPreviousChats();
     });
-    super.initState();
   }
 
   @override
@@ -239,6 +248,7 @@ class _ListTileChat extends ConsumerWidget {
         trailing: const Icon(Icons.arrow_forward_rounded),
         onTap: () async {
           await context.push('/externalizacionVoces/chat/${chat.id}');
+          if (!context.mounted) return;
           ref.read(chatListProvider.notifier).loadPreviousChats();
         },
         onLongPress: () {

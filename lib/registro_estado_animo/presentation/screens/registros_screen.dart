@@ -40,6 +40,9 @@ class _RegistrosScreenState extends ConsumerState<RegistrosScreen> {
     final visibleRecords = _selectedTab == RecordsTab.pending
         ? pending
         : completed;
+    final loadError = _selectedTab == RecordsTab.pending
+        ? state.pendientesError
+        : state.completosError;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -83,6 +86,13 @@ class _RegistrosScreenState extends ConsumerState<RegistrosScreen> {
                         compact: true,
                         message: 'Cargando tus registros…',
                       )
+                    else if (loadError != null && visibleRecords.isEmpty)
+                      _RecordsLoadError(
+                        message: loadError,
+                        onRetry: () => ref
+                            .read(registroEstadoDeAnimoProvider.notifier)
+                            .refreshRegistros(),
+                      )
                     else if (visibleRecords.isEmpty)
                       _EmptyRecordsState(tab: _selectedTab)
                     else ...[
@@ -107,6 +117,37 @@ class _RegistrosScreenState extends ConsumerState<RegistrosScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _RecordsLoadError extends StatelessWidget {
+  const _RecordsLoadError({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return MindsaveSectionCard(
+      child: Column(
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 44,
+            color: theme.colorScheme.error,
+          ),
+          const SizedBox(height: 14),
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reintentar'),
+          ),
+        ],
       ),
     );
   }
@@ -377,35 +418,45 @@ class _CompletedRecordCard extends StatelessWidget {
             style: theme.textTheme.titleMedium?.copyWith(height: 1.35),
           ),
           const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: _RecordMetric(
-                  value: '$reduction%',
-                  label: 'Reducción emocional',
-                  icon: Icons.trending_down_rounded,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _RecordMetric(
-                  value: '${record.listaPensamientos.length}',
-                  label: 'Pensamientos trabajados',
-                  icon: Icons.psychology_alt_outlined,
-                ),
-              ),
-              if (primaryEmotion != null) ...[
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _RecordMetric(
-                    value: '${primaryEmotion.emoji} ${primaryEmotion.title}',
-                    label:
-                        '${primaryEmotion.group.porcentajeCreenciaAntes ?? 0}% → ${primaryEmotion.group.porcentajeCreenciaDespues ?? 0}%',
-                    icon: Icons.favorite_outline_rounded,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 560;
+              final halfWidth = (constraints.maxWidth - 10) / 2;
+              final thirdWidth = (constraints.maxWidth - 20) / 3;
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  SizedBox(
+                    width: wide ? thirdWidth : halfWidth,
+                    child: _RecordMetric(
+                      value: '$reduction%',
+                      label: 'Reducción emocional',
+                      icon: Icons.trending_down_rounded,
+                    ),
                   ),
-                ),
-              ],
-            ],
+                  SizedBox(
+                    width: wide ? thirdWidth : halfWidth,
+                    child: _RecordMetric(
+                      value: '${record.listaPensamientos.length}',
+                      label: 'Pensamientos trabajados',
+                      icon: Icons.psychology_alt_outlined,
+                    ),
+                  ),
+                  if (primaryEmotion != null)
+                    SizedBox(
+                      width: wide ? thirdWidth : constraints.maxWidth,
+                      child: _RecordMetric(
+                        value:
+                            '${primaryEmotion.emoji} ${primaryEmotion.title}',
+                        label:
+                            '${primaryEmotion.group.porcentajeCreenciaAntes ?? 0}% → ${primaryEmotion.group.porcentajeCreenciaDespues ?? 0}%',
+                        icon: Icons.favorite_outline_rounded,
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 17),
           OutlinedButton.icon(

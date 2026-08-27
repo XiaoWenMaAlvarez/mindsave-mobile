@@ -29,6 +29,7 @@ class _RegistroEstadoAnimoPendingViewStep6ScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref
           .read(registroEstadoDeAnimoProvider.notifier)
           .cargarRegistrosEstadoDeAnimoById(widget.idRegistroEstadoAnimo);
@@ -70,7 +71,16 @@ class _RegistroEstadoAnimoPendingViewStep6ScreenState
                     compact: true,
                     message: 'Cargando tu registro…',
                   )
-                : const CbtRecordNotFoundView())
+                : CbtRecordNotFoundView(
+                    message: state.recordError,
+                    onRetry: state.recordError == null
+                        ? null
+                        : () => ref
+                              .read(registroEstadoDeAnimoProvider.notifier)
+                              .cargarRegistrosEstadoDeAnimoById(
+                                widget.idRegistroEstadoAnimo,
+                              ),
+                  ))
           : _StepSixContent(
               groups: groups,
               formKeys: _formKeys,
@@ -122,12 +132,22 @@ class _RegistroEstadoAnimoPendingViewStep6ScreenState
     for (final data in cbtEmotionGroups(record)) {
       if (!data.hasSelection) data.group.porcentajeCreenciaDespues = 0;
     }
-    await ref
-        .read(registroEstadoDeAnimoProvider.notifier)
-        .editarRegistroEstadoDeAnimo(record);
+    try {
+      await ref
+          .read(registroEstadoDeAnimoProvider.notifier)
+          .editarRegistroEstadoDeAnimo(record);
+    } catch (_) {
+      if (mounted) {
+        showCbtMessage(
+          context,
+          'No se pudo completar el registro. Inténtalo nuevamente.',
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     showCbtMessage(context, 'Registro completado y guardado.');
-    context.push('/registroEstadoAnimo/7/${record.id}');
+    context.go('/registroEstadoAnimo/7/${record.id}');
   }
 }
 

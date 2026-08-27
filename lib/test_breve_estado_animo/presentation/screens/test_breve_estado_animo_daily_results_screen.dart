@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/config/helpers/date_helper.dart';
@@ -23,10 +23,15 @@ class _TestBreveEstadoAnimoDailyResultsScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final error = await ref
           .read(todayTestBreveEstadoDeAnimoProvider.notifier)
           .setTestBreveRealizadoHoy();
+      if (!mounted || error == null) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
     });
   }
 

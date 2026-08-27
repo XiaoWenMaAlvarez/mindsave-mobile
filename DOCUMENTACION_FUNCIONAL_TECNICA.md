@@ -708,7 +708,7 @@ Al leer mensajes, `createdAt` se convierte a hora local. Para la UI, un mensaje 
 ### 10.2 Listar conversaciones
 
 Al entrar en `/externalizacionVoces/0`, `chatListProvider` ejecuta `GET /api/chat-ia/get-chats-by-user`. La respuesta esperada es `{results: [chat...]}`.
-Cada tarjeta presenta título y un mensaje usado como vista previa. Al regresar de la pantalla de chat (`ExternalizacionVocesChatScreen`), la lista invoca `loadPreviousChats()` para mantener las conversaciones sincronizadas con el último mensaje y fecha. El orden de las tarjetas depende de la respuesta del backend.
+Cada tarjeta presenta el título y el mensaje más reciente como vista previa. Al regresar de `ExternalizacionVocesChatScreen`, la lista vuelve a invocar `loadPreviousChats()` y ordena las conversaciones por la fecha de su último mensaje. Tanto la carga diferida inicial como la recarga posterior a la navegación comprueban que su widget continúe montado antes de acceder a `WidgetRef`; si el router sustituyó la pantalla, el callback se abandona sin consultar el provider.
 
 ### 10.3 Crear conversación
 
@@ -718,9 +718,9 @@ Cada tarjeta presenta título y un mensaje usado como vista previa. Al regresar 
 4. Se envía `POST /api/chat-ia/new-chat` con `{title}`.
 5. El id se toma de `response.data["result"]`.
 6. El notifier envía automáticamente el prompt `Hola` al chat recién creado y consume el stream completo.
-7. Agrega el nuevo chat, todavía con lista local de mensajes vacía, al inicio del listado.
+7. Agrega inmediatamente al listado el chat con el saludo local del usuario y, si el stream responde, incorpora también la respuesta inicial del asistente.
 
-La unicidad del título depende del backend. Cualquier excepción de creación o del saludo automático se presenta como “Nombre del chat ya usado”, incluso cuando la causa sea distinta.
+La unicidad del título depende del backend. HTTP 400/409 y errores que indiquen duplicidad se presentan como “Nombre del chat ya usado”; el resto usa el mensaje genérico “No se pudo crear el chat”. Si solo falla el saludo automático, se conserva el chat creado y el usuario puede abrirlo o reintentar dentro de la conversación.
 
 ### 10.4 Eliminar conversación
 
@@ -738,6 +738,8 @@ Al abrir `/externalizacionVoces/chat/:idChat`:
 6. `chatControllerProvider` inserta, actualiza o reemplaza mensajes en el controlador de `flutter_chat_ui`.
 
 Archivos no considerados imágenes permanecen en la entidad, pero no se renderizan en la conversación.
+
+Cada carga se asocia a una versión de conversación y de sesión. Si el usuario abre otro chat, vuelve al listado o cambia la sesión antes de que termine la petición anterior, el resultado atrasado se descarta. Las sincronizaciones hacia `InMemoryChatController` se serializan para impedir que dos actualizaciones concurrentes desordenen o dupliquen mensajes.
 
 ### 10.6 Enviar texto e imágenes
 
@@ -869,13 +871,15 @@ Los tests, situaciones, emociones, pensamientos, notas, mensajes e imágenes se 
 | Módulo | Estrategia observada |
 |---|---|
 | Autenticación | Traduce códigos específicos y mantiene una pantalla de reintento cuando no puede validar una sesión existente. |
-| Test breve | Usa un `isLoadingProvider` compartido; guardar devuelve `"OK"` o texto de excepción, mientras otras operaciones propagan o atrapan errores en pantalla. |
-| Registro CBT | Usa un único `isLoading` para paginación y CRUD; varias pantallas no muestran un estado de error explícito. |
+| Test breve | Usa un `isLoadingProvider` compartido con contador de operaciones concurrentes. Las consultas de hoy/anuales capturan errores, descartan resultados de una sesión anterior y muestran un mensaje recuperable. Guardar devuelve `"OK"` o texto de error. |
+| Registro CBT | Usa un único `isLoading` para paginación y CRUD. El estado conserva errores separados para pendientes, completados y detalle; cada vista muestra reintento ante su propio fallo de carga, y las mutaciones informan el fallo sin navegar como si hubieran terminado correctamente. |
 | Chats | `ChatsListState` y `ChatState` contienen `error`; la UI lo consume en SnackBars y luego lo limpia. |
 | Exportación | Bloquea botones mientras genera y muestra éxito, cancelación o error genérico. |
 | Caché | Una falla al leer, invalidar o limpiar caché no bloquea la operación principal. |
 
-Cuando `cargarRegistrosEstadoDeAnimoById` falla, el notifier atrapa el error sin exponerlo. Las pantallas que esperan el registro pueden seguir mostrando “Cargando tu registro…” aunque `isLoading` ya sea falso y el objeto no exista.
+Las operaciones asíncronas de registro, test y chat capturan una generación del provider. Una respuesta que termina después de un cambio de repositorio o sesión no puede escribir sobre el estado nuevo. Las pantallas que inician trabajo después del primer frame verifican `mounted` antes de acceder a `WidgetRef`, y los usos de `BuildContext` posteriores a `await` realizan la comprobación equivalente.
+
+El notifier CBT contabiliza operaciones activas y separa los bloqueos de paginación, carga por id y mutación. Por ello, abrir directamente un detalle mientras todavía se cargan las primeras páginas del listado no descarta la petición del registro solicitado; `isLoading` permanece activo hasta que finalizan todas las operaciones concurrentes.
 
 ## 15. Dependencias y función arquitectónica
 
@@ -925,9 +929,9 @@ Esta sección describe comportamiento observable y no debe transformarse en requ
 1. No hay backend en este repositorio ni mock de ejecución para la aplicación completa.
 2. `API_URL_BASE` vacío no detiene el arranque.
 3. El caché es volátil y no permite operación offline completa.
-4. Varios errores CBT se silencian o se convierten en mensajes genéricos.
-5. La creación de chat presenta cualquier fallo como título duplicado.
-6. El saludo automático `Hola` de un chat nuevo no se agrega al objeto local; aparece después de recargar el historial.
+4. Los errores de mutación CBT se muestran al usuario, pero utilizan mensajes genéricos y no trasladan el detalle del backend.
+5. La creación de chat interpreta HTTP 400/409 como título duplicado; depende de que el backend reserve esos códigos para dicha validación.
+6. El saludo automático `Hola` y la respuesta inicial se agregan al objeto local; si falla únicamente el stream de bienvenida, se conserva el chat con el saludo del usuario.
 7. Una respuesta HTTP 401 finaliza la sesión, pero no existe renovación automática del token ni reintento transparente de la solicitud original.
 
 ### 16.5 Seguridad y despliegue móvil
@@ -935,7 +939,7 @@ Esta sección describe comportamiento observable y no debe transformarse en requ
 1. El token se guarda en `SharedPreferences` sin `flutter_secure_storage` ni mecanismo equivalente.
 2. El manifest Android principal (`android/app/src/main/AndroidManifest.xml`) declara `INTERNET`, garantizando conectividad en compilaciones de release.
 3. `Info.plist` declara `NSPhotoLibraryUsageDescription` y `NSCameraUsageDescription` requeridas por `image_picker` en iOS.
-4. La configuración release Android firma con claves debug; el identificador está configurado como `applicationId = com.mindsave.app`.
+4. La configuración release Android carga una clave de firma propia desde `android/key.properties`; si se solicita una compilación release sin ese archivo, Gradle detiene el proceso con un mensaje de configuración. El archivo real y los keystores están excluidos de Git, y `android/key.properties.example` documenta las propiedades requeridas. El identificador está configurado como `applicationId = com.mindsave.app`.
 5. Los nombres visibles de Android/iOS están configurados como “Mindsave”.
 6. No se observa certificate pinning, cifrado de payload a nivel de aplicación ni sanitización clínica específica.
 7. `.env` se declara como asset de Flutter. Es apropiado para una URL base, pero cualquier secreto añadido allí quedaría incluido en el paquete distribuido.
@@ -968,7 +972,8 @@ La suite cubre:
 - reenvío del correo de activación, incluyendo endpoint y body enviados;
 - reintento de conexión;
 - providers migrados a Riverpod `Notifier`;
-- streaming y render de imágenes del chat;
+- descarte de respuestas atrasadas entre conversaciones, streaming y render de imágenes del chat;
+- contador correcto de cargas concurrentes y errores recuperables de carga CBT;
 - widgets y validaciones del flujo CBT;
 - exportaciones PDF/XLSX de CBT y test anual;
 - navegación inferior y vistas de carga;
@@ -976,7 +981,9 @@ La suite cubre:
 - consulta autónoma y presentación del resultado de hoy al abrir la vista diaria;
 - consistencia horaria local en la tarjeta de resumen del test completado.
 
-Resultado de `flutter test`: **49 pruebas exitosas y 0 fallidas**.
+Resultado de `flutter test`: **62 pruebas exitosas y 0 fallidas**.
+
+También se instaló la compilación debug en un emulador Pixel 9 con Android 16. Se comprobó el arranque con una sesión existente, la carga de registros pendientes/completados, el detalle CBT, el listado y detalle de conversaciones, el retorno y recarga del chat, y la navegación inferior sin acumulación de destinos. La validación visual detectó y corrigió la compresión de la métrica de emoción en las tarjetas CBT completadas: en ancho móvil ahora se distribuye en una fila propia.
 
 Durante las pruebas de PDF también se muestran advertencias informativas del paquete `pdf` por falta de soporte Unicode de Helvetica; los archivos se generan y superan las validaciones estructurales existentes.
 

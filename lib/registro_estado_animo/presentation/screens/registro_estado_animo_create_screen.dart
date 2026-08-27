@@ -37,6 +37,7 @@ class _RegistroEstadoAnimoCreateScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref
           .read(nuevoRegistroEstadoDeAnimoProvider.notifier)
           .crearNuevoRegistroEstadoAnimo();

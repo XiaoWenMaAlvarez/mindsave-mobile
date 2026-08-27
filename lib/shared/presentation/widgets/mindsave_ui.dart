@@ -461,7 +461,7 @@ class MindsaveBottomNavigation extends StatelessWidget {
   }
 
   void _goTo(BuildContext context, int index) {
-    if (index != currentIndex) context.push(_paths[index]);
+    if (index != currentIndex) context.go(_paths[index]);
   }
 }
 

@@ -5,6 +5,8 @@ import 'registro_estado_animo_repository_provider.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 import 'package:mindsave/registro_estado_animo/domain/repositories/registro_estado_animo_repository.dart';
 
+const _unchangedRegistroError = Object();
+
 class RegistroEstadoAnimoState {
   final bool isLastPendientePage;
   final int limitPendiente;
@@ -13,6 +15,9 @@ class RegistroEstadoAnimoState {
   final int limitCompleto;
   final int pageCompleto;
   final bool isLoading;
+  final String? pendientesError;
+  final String? completosError;
+  final String? recordError;
   final List<RegistroEstadoAnimo> registros;
 
   RegistroEstadoAnimoState({
@@ -23,6 +28,9 @@ class RegistroEstadoAnimoState {
     this.limitCompleto = 10,
     this.pageCompleto = 1,
     this.isLoading = false,
+    this.pendientesError,
+    this.completosError,
+    this.recordError,
     this.registros = const [],
   });
 
@@ -34,6 +42,9 @@ class RegistroEstadoAnimoState {
     int? limitCompleto,
     int? pageCompleto,
     bool? isLoading,
+    Object? pendientesError = _unchangedRegistroError,
+    Object? completosError = _unchangedRegistroError,
+    Object? recordError = _unchangedRegistroError,
     List<RegistroEstadoAnimo>? registros,
   }) => RegistroEstadoAnimoState(
     isLastPendientePage: isLastPendientePage ?? this.isLastPendientePage,
@@ -43,20 +54,54 @@ class RegistroEstadoAnimoState {
     limitCompleto: limitCompleto ?? this.limitCompleto,
     pageCompleto: pageCompleto ?? this.pageCompleto,
     isLoading: isLoading ?? this.isLoading,
+    pendientesError: identical(pendientesError, _unchangedRegistroError)
+        ? this.pendientesError
+        : pendientesError as String?,
+    completosError: identical(completosError, _unchangedRegistroError)
+        ? this.completosError
+        : completosError as String?,
+    recordError: identical(recordError, _unchangedRegistroError)
+        ? this.recordError
+        : recordError as String?,
     registros: registros ?? this.registros,
   );
 }
 
 class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
   late RegistroEstadoAnimoRepository registroEstadoAnimoRepository;
+  int _generation = 0;
+  int _activeOperations = 0;
+  bool _loadingPendientes = false;
+  bool _loadingCompletos = false;
+  bool _isMutating = false;
+  final Set<String> _loadingRecordIds = {};
 
   @override
   RegistroEstadoAnimoState build() {
+    _generation++;
+    _activeOperations = 0;
+    _loadingPendientes = false;
+    _loadingCompletos = false;
+    _isMutating = false;
+    _loadingRecordIds.clear();
     registroEstadoAnimoRepository = ref.watch(
       registroEstadoAnimoRepositoryProvider,
     );
     unawaited(Future<void>.microtask(_initialLoading));
     return RegistroEstadoAnimoState();
+  }
+
+  bool _isCurrent(int generation) => ref.mounted && generation == _generation;
+
+  void _beginOperation() {
+    _activeOperations++;
+    state = state.copyWith(isLoading: true);
+  }
+
+  void _finishOperation(int generation) {
+    if (!_isCurrent(generation)) return;
+    if (_activeOperations > 0) _activeOperations--;
+    state = state.copyWith(isLoading: _activeOperations > 0);
   }
 
   Future<void> _initialLoading() async {
@@ -73,6 +118,9 @@ class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
       isLastPendientePage: false,
       pageCompleto: 1,
       isLastCompletoPage: false,
+      pendientesError: null,
+      completosError: null,
+      recordError: null,
       registros: const [],
     );
     await loadNextCompletosPage();
@@ -100,60 +148,80 @@ class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
 
   Future<void> loadNextPendientesPage() async {
     if (!ref.mounted) return;
-    if (state.isLoading) return;
+    if (_loadingPendientes) return;
     if (state.isLastPendientePage) return;
 
-    state = state.copyWith(isLoading: true);
+    final generation = _generation;
+    final repository = registroEstadoAnimoRepository;
+    final page = state.pagePendiente;
+    final limit = state.limitPendiente;
+    _loadingPendientes = true;
+    state = state.copyWith(pendientesError: null);
+    _beginOperation();
     try {
-      final List<RegistroEstadoAnimo> newRegistros =
-          await registroEstadoAnimoRepository.getRegistroEstadoDeAnimoPendiente(
-            page: state.pagePendiente,
-            limit: state.limitPendiente,
-          );
-      if (!ref.mounted) return;
+      final List<RegistroEstadoAnimo> newRegistros = await repository
+          .getRegistroEstadoDeAnimoPendiente(page: page, limit: limit);
+      if (!_isCurrent(generation)) return;
       if (newRegistros.isEmpty) {
         state = state.copyWith(isLastPendientePage: true);
         return;
       }
 
       state = state.copyWith(
-        isLastPendientePage: newRegistros.length < state.limitPendiente,
-        pagePendiente: state.pagePendiente + 1,
+        isLastPendientePage: newRegistros.length < limit,
+        pagePendiente: page + 1,
         registros: _mergeRegistros(state.registros, newRegistros),
       );
+    } catch (_) {
+      if (_isCurrent(generation)) {
+        state = state.copyWith(
+          pendientesError: 'No se pudieron cargar los registros pendientes.',
+        );
+      }
     } finally {
-      if (ref.mounted) {
-        state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        _loadingPendientes = false;
+        _finishOperation(generation);
       }
     }
   }
 
   Future<void> loadNextCompletosPage() async {
     if (!ref.mounted) return;
-    if (state.isLoading) return;
+    if (_loadingCompletos) return;
     if (state.isLastCompletoPage) return;
 
-    state = state.copyWith(isLoading: true);
+    final generation = _generation;
+    final repository = registroEstadoAnimoRepository;
+    final page = state.pageCompleto;
+    final limit = state.limitCompleto;
+    _loadingCompletos = true;
+    state = state.copyWith(completosError: null);
+    _beginOperation();
     try {
-      final List<RegistroEstadoAnimo> newRegistros =
-          await registroEstadoAnimoRepository.getRegistroEstadoDeAnimoCompleto(
-            page: state.pageCompleto,
-            limit: state.limitCompleto,
-          );
-      if (!ref.mounted) return;
+      final List<RegistroEstadoAnimo> newRegistros = await repository
+          .getRegistroEstadoDeAnimoCompleto(page: page, limit: limit);
+      if (!_isCurrent(generation)) return;
       if (newRegistros.isEmpty) {
         state = state.copyWith(isLastCompletoPage: true);
         return;
       }
 
       state = state.copyWith(
-        isLastCompletoPage: newRegistros.length < state.limitCompleto,
-        pageCompleto: state.pageCompleto + 1,
+        isLastCompletoPage: newRegistros.length < limit,
+        pageCompleto: page + 1,
         registros: _mergeRegistros(state.registros, newRegistros),
       );
+    } catch (_) {
+      if (_isCurrent(generation)) {
+        state = state.copyWith(
+          completosError: 'No se pudieron cargar los registros completados.',
+        );
+      }
     } finally {
-      if (ref.mounted) {
-        state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        _loadingCompletos = false;
+        _finishOperation(generation);
       }
     }
   }
@@ -165,13 +233,17 @@ class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
     );
     if (isRegistroCargado) return;
 
-    if (state.isLoading) return;
+    if (_loadingRecordIds.contains(id)) return;
 
+    final generation = _generation;
+    final repository = registroEstadoAnimoRepository;
+    _loadingRecordIds.add(id);
     try {
-      state = state.copyWith(isLoading: true);
-      final RegistroEstadoAnimo? registroEstadoAnimoBuscado =
-          await registroEstadoAnimoRepository.getRegistroEstadoDeAnimoById(id);
-      if (!ref.mounted) return;
+      state = state.copyWith(recordError: null);
+      _beginOperation();
+      final RegistroEstadoAnimo? registroEstadoAnimoBuscado = await repository
+          .getRegistroEstadoDeAnimoById(id);
+      if (!_isCurrent(generation)) return;
       if (registroEstadoAnimoBuscado != null) {
         state = state.copyWith(
           registros: _mergeRegistros(state.registros, [
@@ -179,11 +251,16 @@ class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
           ]),
         );
       }
-    } catch (e) {
-      return;
+    } catch (_) {
+      if (_isCurrent(generation)) {
+        state = state.copyWith(
+          recordError: 'No se pudo cargar el registro. Comprueba tu conexión.',
+        );
+      }
     } finally {
-      if (ref.mounted) {
-        state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        _loadingRecordIds.remove(id);
+        _finishOperation(generation);
       }
     }
 
@@ -204,26 +281,36 @@ class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
   Future<void> guardarRegistroEstadoDeAnimo(
     RegistroEstadoAnimo nvoRegistroEstadoAnimo,
   ) async {
-    if (state.isLoading) return;
-    state = state.copyWith(isLoading: true);
+    if (_isMutating) return;
+    final generation = _generation;
+    final repository = registroEstadoAnimoRepository;
+    _isMutating = true;
+    _beginOperation();
     try {
-      nvoRegistroEstadoAnimo.id = await registroEstadoAnimoRepository
-          .saveRegistroEstadoDeAnimo(nvoRegistroEstadoAnimo);
+      nvoRegistroEstadoAnimo.id = await repository.saveRegistroEstadoDeAnimo(
+        nvoRegistroEstadoAnimo,
+      );
+      if (!_isCurrent(generation)) return;
       state = state.copyWith(
         registros: _mergeRegistros(state.registros, [nvoRegistroEstadoAnimo]),
       );
     } finally {
-      state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        _isMutating = false;
+        _finishOperation(generation);
+      }
     }
   }
 
   Future<void> eliminarRegistroEstadoDeAnimo(String id) async {
-    if (state.isLoading) return;
-    state = state.copyWith(isLoading: true);
+    if (_isMutating) return;
+    final generation = _generation;
+    final repository = registroEstadoAnimoRepository;
+    _isMutating = true;
+    _beginOperation();
     try {
-      await registroEstadoAnimoRepository.eliminarRegistroEstadoDeAnimoDeHoy(
-        id,
-      );
+      await repository.eliminarRegistroEstadoDeAnimoDeHoy(id);
+      if (!_isCurrent(generation)) return;
       if (state.registros.isNotEmpty) {
         state = state.copyWith(
           registros: state.registros
@@ -235,19 +322,24 @@ class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
         );
       }
     } finally {
-      state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        _isMutating = false;
+        _finishOperation(generation);
+      }
     }
   }
 
   Future<void> editarRegistroEstadoDeAnimo(
     RegistroEstadoAnimo nvoRegistroEstadoAnimo,
   ) async {
-    if (state.isLoading) return;
-    state = state.copyWith(isLoading: true);
+    if (_isMutating) return;
+    final generation = _generation;
+    final repository = registroEstadoAnimoRepository;
+    _isMutating = true;
+    _beginOperation();
     try {
-      await registroEstadoAnimoRepository.editarRegistroEstadoDeAnimoDeHoy(
-        nvoRegistroEstadoAnimo,
-      );
+      await repository.editarRegistroEstadoDeAnimoDeHoy(nvoRegistroEstadoAnimo);
+      if (!_isCurrent(generation)) return;
       state = state.copyWith(
         registros: state.registros.map((registroEstadoAnimo) {
           if (registroEstadoAnimo.id == nvoRegistroEstadoAnimo.id) {
@@ -257,7 +349,10 @@ class RegistroEstadoDeAnimoNotifier extends Notifier<RegistroEstadoAnimoState> {
         }).toList(),
       );
     } finally {
-      state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        _isMutating = false;
+        _finishOperation(generation);
+      }
     }
   }
 

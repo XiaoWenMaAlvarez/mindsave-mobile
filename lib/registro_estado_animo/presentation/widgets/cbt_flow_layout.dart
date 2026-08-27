@@ -373,7 +373,17 @@ Future<bool> confirmCbtLeave(
   );
   if (choice == null) return false;
   if (choice == CbtLeaveChoice.save) {
-    await onSave();
+    try {
+      await onSave();
+    } catch (_) {
+      if (context.mounted) {
+        showCbtMessage(
+          context,
+          'No se pudieron guardar los cambios. Inténtalo nuevamente.',
+        );
+      }
+      return false;
+    }
   } else if (choice == CbtLeaveChoice.discard) {
     onDiscard?.call();
   }
@@ -387,7 +397,10 @@ void showCbtMessage(BuildContext context, String message) {
 }
 
 class CbtRecordNotFoundView extends StatelessWidget {
-  const CbtRecordNotFoundView({super.key});
+  const CbtRecordNotFoundView({super.key, this.message, this.onRetry});
+
+  final String? message;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -411,15 +424,24 @@ class CbtRecordNotFoundView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Es posible que haya sido eliminado o no se pudo cargar desde el servidor.',
+              message ??
+                  'Es posible que haya sido eliminado o no se pudo cargar desde el servidor.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
+            if (onRetry != null) ...[
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reintentar'),
+              ),
+              const SizedBox(height: 8),
+            ],
             FilledButton.icon(
-              onPressed: () => context.push('/registros'),
+              onPressed: () => context.go('/registros'),
               icon: const Icon(Icons.arrow_back_rounded),
               label: const Text('Volver a mis registros'),
             ),

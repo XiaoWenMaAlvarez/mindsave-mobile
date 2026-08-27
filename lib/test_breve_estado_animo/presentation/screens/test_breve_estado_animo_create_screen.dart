@@ -7,19 +7,26 @@ import 'package:mindsave/test_breve_estado_animo/presentation/widgets/widgets.da
 import 'package:mindsave/home/presentation/widgets/widgets.dart';
 import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
-class TestBreveEstadoAnimoCreateScreen extends StatelessWidget {
+class TestBreveEstadoAnimoCreateScreen extends StatefulWidget {
   const TestBreveEstadoAnimoCreateScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final scaffoldKey = GlobalKey<ScaffoldState>();
+  State<TestBreveEstadoAnimoCreateScreen> createState() =>
+      _TestBreveEstadoAnimoCreateScreenState();
+}
 
+class _TestBreveEstadoAnimoCreateScreenState
+    extends State<TestBreveEstadoAnimoCreateScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      key: scaffoldKey,
+      key: _scaffoldKey,
       appBar: AppBar(titleSpacing: 20, title: const CustomAppbar()),
       body: _CreateView(),
       bottomNavigationBar: CustomBottomNavigation(currentIndex: 0),
-      endDrawer: SideMenu(scaffoldKey: scaffoldKey),
+      endDrawer: SideMenu(scaffoldKey: _scaffoldKey),
     );
   }
 }
@@ -65,13 +72,16 @@ class _TestBreveFormState extends ConsumerState<_TestBreveForm> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final error = await ref
           .read(todayTestBreveEstadoDeAnimoProvider.notifier)
           .setTestBreveRealizadoHoy();
+      if (!mounted) return;
       ref
           .read(todayTestBreveEstadoDeAnimoProvider.notifier)
           .scheduleNextMidnightCheck();
+      if (error != null) _showSnackBar(context, error);
     });
   }
 
@@ -173,10 +183,10 @@ class _TestBreveFormState extends ConsumerState<_TestBreveForm> {
         await ref
             .read(testBreveEstadoDeAnimoProvider.notifier)
             .sobrescribirTestBreveEstadoDeAnimoDeHoy(testBreveEstadoDeAnimo);
+        if (!mounted) return;
         ref
             .read(todayTestBreveEstadoDeAnimoProvider.notifier)
             .localSetTestBreveRealizadoHoy(testBreveEstadoDeAnimo);
-        if (!mounted) return;
         setState(() => _isEditing = false);
         _showSnackBar(context, 'Cambios guardados correctamente');
       } catch (_) {
@@ -202,10 +212,10 @@ class _TestBreveFormState extends ConsumerState<_TestBreveForm> {
       }
       return;
     }
+    if (!mounted) return;
     ref
         .read(todayTestBreveEstadoDeAnimoProvider.notifier)
         .localSetTestBreveRealizadoHoy(testBreveEstadoDeAnimo);
-    if (!mounted) return;
     _showSnackBar(context, 'Test Breve de Estado de Ánimo guardado');
     context.push('/testBreveEstadoAnimo/1');
   }
@@ -290,15 +300,11 @@ void _mostrarMensajeEliminarTestBreveEstadoDeAnimo(
               await ref
                   .read(testBreveEstadoDeAnimoProvider.notifier)
                   .eliminarTestBreveEstadoDeAnimoDeHoy();
+              if (!context.mounted) return;
               ref
                   .read(todayTestBreveEstadoDeAnimoProvider.notifier)
                   .eliminarTestBreveRealizadoHoy();
-              if (context.mounted) {
-                _showSnackBar(
-                  context,
-                  'Test Breve de Estado de Ánimo eliminado',
-                );
-              }
+              _showSnackBar(context, 'Test Breve de Estado de Ánimo eliminado');
             } catch (_) {
               if (context.mounted) {
                 _showSnackBar(

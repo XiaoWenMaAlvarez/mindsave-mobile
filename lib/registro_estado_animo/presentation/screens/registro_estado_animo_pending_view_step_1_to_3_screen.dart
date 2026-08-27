@@ -42,6 +42,7 @@ class _RegistroEstadoAnimoPendingViewStep1To3ScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref
           .read(registroEstadoDeAnimoProvider.notifier)
           .cargarRegistrosEstadoDeAnimoById(widget.idRegistroEstadoAnimo);
@@ -66,7 +67,16 @@ class _RegistroEstadoAnimoPendingViewStep1To3ScreenState
                     compact: true,
                     message: 'Cargando tu registro…',
                   )
-                : const CbtRecordNotFoundView())
+                : CbtRecordNotFoundView(
+                    message: state.recordError,
+                    onRetry: state.recordError == null
+                        ? null
+                        : () => ref
+                              .read(registroEstadoDeAnimoProvider.notifier)
+                              .cargarRegistrosEstadoDeAnimoById(
+                                widget.idRegistroEstadoAnimo,
+                              ),
+                  ))
           : MindsaveSectionCard(
               padding: const EdgeInsets.fromLTRB(8, 10, 8, 14),
               child: AnimatedSwitcher(
@@ -131,9 +141,19 @@ class _RegistroEstadoAnimoPendingViewStep1To3ScreenState
       return;
     }
 
-    await ref
-        .read(registroEstadoDeAnimoProvider.notifier)
-        .editarRegistroEstadoDeAnimo(record);
+    try {
+      await ref
+          .read(registroEstadoDeAnimoProvider.notifier)
+          .editarRegistroEstadoDeAnimo(record);
+    } catch (_) {
+      if (mounted) {
+        showCbtMessage(
+          context,
+          'No se pudo guardar el registro. Inténtalo nuevamente.',
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     context.push('/registroEstadoAnimo/3/${record.id}');
   }
@@ -162,11 +182,21 @@ class _RegistroEstadoAnimoPendingViewStep1To3ScreenState
       ),
     );
     if (confirmed != true) return;
-    await ref
-        .read(registroEstadoDeAnimoProvider.notifier)
-        .eliminarRegistroEstadoDeAnimo(record.id);
+    try {
+      await ref
+          .read(registroEstadoDeAnimoProvider.notifier)
+          .eliminarRegistroEstadoDeAnimo(record.id);
+    } catch (_) {
+      if (mounted) {
+        showCbtMessage(
+          context,
+          'No se pudo eliminar el registro. Inténtalo nuevamente.',
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     showCbtMessage(context, 'Registro eliminado.');
-    context.push('/registros');
+    context.go('/registros');
   }
 }

@@ -36,12 +36,16 @@ class ChatsListState {
 
 class ChatsListNotifier extends Notifier<ChatsListState> {
   late ExternalizacionDeVocesRepository repository;
+  int _generation = 0;
 
   @override
   ChatsListState build() {
+    _generation++;
     repository = ref.watch(chatIaRepositoryProvider);
     return const ChatsListState();
   }
+
+  bool _isCurrent(int generation) => ref.mounted && generation == _generation;
 
   void clearError() => state = state.copyWith(error: null);
 
@@ -65,9 +69,11 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
 
   Future<void> addChat({required String title}) async {
     if (state.isLoading) return;
+    final generation = _generation;
     state = state.copyWith(isLoading: true, error: null);
     try {
       final newChat = await repository.createNewChat(title);
+      if (!_isCurrent(generation)) return;
       final now = DateTime.now();
       newChat.mensajes = [
         MensajeChatIa(
@@ -86,8 +92,10 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
           newChat.id,
           'Hola',
         )) {
+          if (!_isCurrent(generation)) return;
           greetingResponse = chunk;
         }
+        if (!_isCurrent(generation)) return;
         if (greetingResponse.isNotEmpty) {
           newChat.mensajes = [
             ...newChat.mensajes,
@@ -105,6 +113,7 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
         // Si el saludo inicial de la IA falla, el chat ya fue creado y conservado.
       }
     } catch (e) {
+      if (!_isCurrent(generation)) return;
       if (e is DioException) {
         if (e.response?.statusCode == 400 || e.response?.statusCode == 409) {
           state = state.copyWith(error: 'Nombre del chat ya usado');
@@ -123,35 +132,49 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
         error: 'No se pudo crear el chat. Inténtalo nuevamente.',
       );
     } finally {
-      state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 
   Future<void> deleteChat({required String idChat}) async {
     if (state.isLoading) return;
+    final generation = _generation;
     state = state.copyWith(isLoading: true, error: null);
     try {
       await repository.deleteChat(idChat);
+      if (!_isCurrent(generation)) return;
       state = state.copyWith(
         chats: state.chats.where((chat) => chat.id != idChat).toList(),
       );
     } catch (_) {
-      state = state.copyWith(error: 'No se pudo eliminar el chat');
+      if (_isCurrent(generation)) {
+        state = state.copyWith(error: 'No se pudo eliminar el chat');
+      }
     } finally {
-      state = state.copyWith(isLoading: false);
+      if (_isCurrent(generation)) {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 
   Future<void> loadPreviousChats() async {
     if (state.isInitialLoading) return;
+    final generation = _generation;
     state = state.copyWith(isInitialLoading: true, error: null);
     try {
       final chats = await repository.getChatsByUser();
+      if (!_isCurrent(generation)) return;
       state = state.copyWith(chats: _sortChats(chats));
     } catch (_) {
-      state = state.copyWith(error: 'No se pudieron cargar los chats');
+      if (_isCurrent(generation)) {
+        state = state.copyWith(error: 'No se pudieron cargar los chats');
+      }
     } finally {
-      state = state.copyWith(isInitialLoading: false);
+      if (_isCurrent(generation)) {
+        state = state.copyWith(isInitialLoading: false);
+      }
     }
   }
 }

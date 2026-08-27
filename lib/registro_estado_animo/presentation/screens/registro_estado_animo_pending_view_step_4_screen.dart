@@ -28,6 +28,7 @@ class _RegistroEstadoAnimoPendingViewStep4ScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref
           .read(registroEstadoDeAnimoProvider.notifier)
           .cargarRegistrosEstadoDeAnimoById(widget.idRegistroEstadoAnimo);
@@ -56,7 +57,16 @@ class _RegistroEstadoAnimoPendingViewStep4ScreenState
                     compact: true,
                     message: 'Cargando tu registro…',
                   )
-                : const CbtRecordNotFoundView())
+                : CbtRecordNotFoundView(
+                    message: state.recordError,
+                    onRetry: state.recordError == null
+                        ? null
+                        : () => ref
+                              .read(registroEstadoDeAnimoProvider.notifier)
+                              .cargarRegistrosEstadoDeAnimoById(
+                                widget.idRegistroEstadoAnimo,
+                              ),
+                  ))
           : _StepFourContent(record: record),
       nextLabel: 'Continuar',
       isLoading: state.isLoading,
@@ -86,9 +96,19 @@ class _RegistroEstadoAnimoPendingViewStep4ScreenState
   }
 
   Future<void> _continue(RegistroEstadoAnimo record) async {
-    await ref
-        .read(registroEstadoDeAnimoProvider.notifier)
-        .editarRegistroEstadoDeAnimo(record);
+    try {
+      await ref
+          .read(registroEstadoDeAnimoProvider.notifier)
+          .editarRegistroEstadoDeAnimo(record);
+    } catch (_) {
+      if (mounted) {
+        showCbtMessage(
+          context,
+          'No se pudo guardar el registro. Inténtalo nuevamente.',
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     context.push('/registroEstadoAnimo/4/${record.id}');
   }

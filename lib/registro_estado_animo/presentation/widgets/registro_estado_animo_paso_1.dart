@@ -148,6 +148,7 @@ class _DatePickerState extends State<DatePicker> {
       lastDate: now,
     );
 
+    if (!mounted) return;
     if (pickedDate == null) return;
     setState(() {
       _fechaController.text = _formattedDate(pickedDate);

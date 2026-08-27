@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +20,10 @@ import 'package:mindsave/externalizacion_de_voces/presentation/screens/externali
 import 'package:mindsave/home/infrastructure/services/local_storage_service.dart';
 import 'package:mindsave/home/infrastructure/services/local_storage_service_impl.dart';
 import 'package:mindsave/home/presentation/providers/selected_menu_item_provider.dart';
+import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
+import 'package:mindsave/registro_estado_animo/domain/repositories/registro_estado_animo_repository.dart';
+import 'package:mindsave/registro_estado_animo/presentation/providers/registro_estado_animo_provider.dart';
+import 'package:mindsave/registro_estado_animo/presentation/providers/registro_estado_animo_repository_provider.dart';
 import 'package:mindsave/test_breve_estado_animo/presentation/providers/is_loading_provider.dart';
 import 'package:mindsave/test_breve_estado_animo/presentation/providers/selected_year_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -80,6 +86,71 @@ void main() {
     expect(container.read(isLoadingProvider), isTrue);
   });
 
+  test('el indicador global conserva cargas concurrentes activas', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(isLoadingProvider.notifier);
+
+    notifier.setLoading(true);
+    notifier.setLoading(true);
+    notifier.setLoading(false);
+    expect(container.read(isLoadingProvider), isTrue);
+
+    notifier.setLoading(false);
+    expect(container.read(isLoadingProvider), isFalse);
+  });
+
+  test(
+    'la carga inicial CBT convierte errores de red en estado recuperable',
+    () async {
+      final container = ProviderContainer(
+        overrides: [
+          registroEstadoAnimoRepositoryProvider.overrideWithValue(
+            _FailingRegistroRepository(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(registroEstadoDeAnimoProvider);
+      await pumpEventQueue();
+
+      final state = container.read(registroEstadoDeAnimoProvider);
+      expect(state.isLoading, isFalse);
+      expect(state.completosError, contains('completados'));
+      expect(state.pendientesError, contains('pendientes'));
+    },
+  );
+
+  test(
+    'la carga de un detalle CBT no se pierde mientras carga el listado',
+    () async {
+      final repository = _ConcurrentRegistroRepository();
+      final container = ProviderContainer(
+        overrides: [
+          registroEstadoAnimoRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(() {
+        if (!repository.completedPage.isCompleted) {
+          repository.completedPage.complete(const []);
+        }
+        container.dispose();
+      });
+
+      final notifier = container.read(registroEstadoDeAnimoProvider.notifier);
+      await Future<void>.delayed(Duration.zero);
+      expect(container.read(registroEstadoDeAnimoProvider).isLoading, isTrue);
+
+      await notifier.cargarRegistrosEstadoDeAnimoById('detail-1');
+      expect(notifier.getRegistroEstadoDeAnimoById('detail-1'), isNotNull);
+
+      repository.completedPage.complete(const []);
+      await pumpEventQueue();
+      expect(container.read(registroEstadoDeAnimoProvider).isLoading, isFalse);
+    },
+  );
+
   test(
     'ChatNotifier ordena el historial y conserva todos los mensajes',
     () async {
@@ -125,6 +196,38 @@ void main() {
         'newer',
       ]);
       expect((messages.last as chat.TextMessage).text, 'Nuevo');
+    },
+  );
+
+  test(
+    'ChatNotifier descarta una respuesta atrasada de otra conversación',
+    () async {
+      final repository = _DelayedChatRepository();
+      final container = ProviderContainer(
+        overrides: [
+          chatIaRepositoryProvider.overrideWithValue(repository),
+          userChatIaProvider.overrideWithValue(
+            const chat.User(id: 'user-1', name: 'Test'),
+          ),
+          iaChatIaProvider.overrideWithValue(
+            const chat.User(id: 'ia-id', name: 'Mindsave'),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(chatProvider.notifier);
+      final firstLoad = notifier.loadPreviousMessages('chat-a');
+      final secondLoad = notifier.loadPreviousMessages('chat-b');
+
+      repository.complete('chat-b', 'Mensaje B');
+      await secondLoad;
+      repository.complete('chat-a', 'Mensaje A');
+      await firstLoad;
+
+      final messages = container.read(chatProvider).messages;
+      expect(messages, hasLength(1));
+      expect((messages.single as chat.TextMessage).text, 'Mensaje B');
     },
   );
 
@@ -372,6 +475,134 @@ class _FakeChatRepositoryWithFailingStream
     List<XFile> files = const [],
   }) {
     return Stream.error(Exception('Network timeout during stream'));
+  }
+}
+
+class _FailingRegistroRepository implements RegistroEstadoAnimoRepository {
+  @override
+  Future<void> editarRegistroEstadoDeAnimoDeHoy(
+    RegistroEstadoAnimo registroEstadoAnimo,
+  ) async {}
+
+  @override
+  Future<void> eliminarRegistroEstadoDeAnimoDeHoy(String id) async {}
+
+  @override
+  Future<List<RegistroEstadoAnimo>> getRegistroEstadoDeAnimoCompleto({
+    int page = 1,
+    int limit = 10,
+  }) async => throw Exception('offline');
+
+  @override
+  Future<List<RegistroEstadoAnimo>> getRegistroEstadoDeAnimoPendiente({
+    int page = 1,
+    int limit = 10,
+  }) async => throw Exception('offline');
+
+  @override
+  Future<RegistroEstadoAnimo?> getRegistroEstadoDeAnimoById(String id) async =>
+      throw Exception('offline');
+
+  @override
+  Future<String> saveRegistroEstadoDeAnimo(
+    RegistroEstadoAnimo registroEstadoAnimo,
+  ) async => 'id';
+}
+
+class _ConcurrentRegistroRepository implements RegistroEstadoAnimoRepository {
+  final completedPage = Completer<List<RegistroEstadoAnimo>>();
+
+  RegistroEstadoAnimo _record(String id) => RegistroEstadoAnimo(
+    id: id,
+    fecha: DateTime.utc(2026, 8, 27),
+    sucesoTrastornador: 'Registro de prueba',
+    grupoEmociones1: GrupoEmociones1(),
+    grupoEmociones2: GrupoEmociones2(),
+    grupoEmociones3: GrupoEmociones3(),
+    grupoEmociones4: GrupoEmociones4(),
+    grupoEmociones5: GrupoEmociones5(),
+    grupoEmociones6: GrupoEmociones6(),
+    grupoEmociones7: GrupoEmociones7(),
+    grupoEmociones8: GrupoEmociones8(),
+    grupoEmociones9: GrupoEmociones9(),
+    grupoEmocionesPersonalizadas: GrupoEmocionesPersonalizadas(),
+    listaPensamientos: const [],
+  );
+
+  @override
+  Future<void> editarRegistroEstadoDeAnimoDeHoy(
+    RegistroEstadoAnimo registroEstadoAnimo,
+  ) async {}
+
+  @override
+  Future<void> eliminarRegistroEstadoDeAnimoDeHoy(String id) async {}
+
+  @override
+  Future<List<RegistroEstadoAnimo>> getRegistroEstadoDeAnimoCompleto({
+    int page = 1,
+    int limit = 10,
+  }) => completedPage.future;
+
+  @override
+  Future<List<RegistroEstadoAnimo>> getRegistroEstadoDeAnimoPendiente({
+    int page = 1,
+    int limit = 10,
+  }) async => const [];
+
+  @override
+  Future<RegistroEstadoAnimo?> getRegistroEstadoDeAnimoById(String id) async =>
+      _record(id);
+
+  @override
+  Future<String> saveRegistroEstadoDeAnimo(
+    RegistroEstadoAnimo registroEstadoAnimo,
+  ) async => 'detail-1';
+}
+
+class _DelayedChatRepository implements ExternalizacionDeVocesRepository {
+  final _loads = <String, Completer<ChatHistoryChatIa?>>{};
+
+  void complete(String chatId, String message) {
+    (_loads[chatId] ??= Completer<ChatHistoryChatIa?>()).complete(
+      ChatHistoryChatIa(
+        id: chatId,
+        title: chatId,
+        mensajes: [
+          MensajeChatIa(
+            id: '$chatId-message',
+            text: message,
+            createdAt: DateTime.utc(2026),
+            role: 'assistant',
+            archivos: const [],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Future<ChatHistoryChatIa> createNewChat(String title) async {
+    return ChatHistoryChatIa(id: 'new-chat', title: title, mensajes: []);
+  }
+
+  @override
+  Future<void> deleteChat(String idChat) async {}
+
+  @override
+  Future<List<ChatHistoryChatIa>> getChatsByUser() async => [];
+
+  @override
+  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) {
+    return (_loads[idChat] ??= Completer<ChatHistoryChatIa?>()).future;
+  }
+
+  @override
+  Stream<String> sendMessageToChat(
+    String idChat,
+    String prompt, {
+    List<XFile> files = const [],
+  }) {
+    return const Stream.empty();
   }
 }
 

@@ -23,6 +23,7 @@ class _MainAppState extends ConsumerState<MainApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(themeProvider.notifier).getDarkModeFromLocalStorage();
     });
   }

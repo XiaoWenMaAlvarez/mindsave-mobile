@@ -7,19 +7,26 @@ import 'package:mindsave/test_breve_estado_animo/presentation/widgets/widgets.da
 import 'package:mindsave/home/presentation/widgets/widgets.dart';
 import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 
-class TestBreveEstadoAnimoYearResultsScreen extends StatelessWidget {
+class TestBreveEstadoAnimoYearResultsScreen extends StatefulWidget {
   const TestBreveEstadoAnimoYearResultsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final scaffoldKey = GlobalKey<ScaffoldState>();
+  State<TestBreveEstadoAnimoYearResultsScreen> createState() =>
+      _TestBreveEstadoAnimoYearResultsScreenState();
+}
 
+class _TestBreveEstadoAnimoYearResultsScreenState
+    extends State<TestBreveEstadoAnimoYearResultsScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      key: scaffoldKey,
+      key: _scaffoldKey,
       appBar: AppBar(titleSpacing: 20, title: const CustomAppbar()),
       body: _FollowUpView(),
       bottomNavigationBar: CustomBottomNavigation(currentIndex: 2),
-      endDrawer: SideMenu(scaffoldKey: scaffoldKey),
+      endDrawer: SideMenu(scaffoldKey: _scaffoldKey),
     );
   }
 }
@@ -53,13 +60,19 @@ class _FollowUpViewBody extends ConsumerStatefulWidget {
 class _FollowUpViewState extends ConsumerState<_FollowUpViewBody> {
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(testBreveEstadoDeAnimoProvider.notifier)
-          .loadTestBreveEstadoDeAnimoByYear(DateTime.now().year);
-    });
-
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _loadYear(DateTime.now().year);
+    });
+  }
+
+  Future<void> _loadYear(int year) async {
+    final error = await ref
+        .read(testBreveEstadoDeAnimoProvider.notifier)
+        .loadTestBreveEstadoDeAnimoByYear(year);
+    if (!mounted || error == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
   }
 
   @override
@@ -92,13 +105,9 @@ class _FollowUpViewState extends ConsumerState<_FollowUpViewBody> {
         TitleAndYear(
           yearSelected: yearSelected,
           onChanged: (value) {
-            setState(() {
-              yearSelected = value!;
-            });
-            ref.read(selectedYearProvider.notifier).select(value!);
-            ref
-                .read(testBreveEstadoDeAnimoProvider.notifier)
-                .loadTestBreveEstadoDeAnimoByYear(yearSelected);
+            if (value == null) return;
+            ref.read(selectedYearProvider.notifier).select(value);
+            _loadYear(value);
           },
         ),
         const SizedBox(height: 20),

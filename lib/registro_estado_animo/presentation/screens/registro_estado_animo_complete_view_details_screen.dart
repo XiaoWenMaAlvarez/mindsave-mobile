@@ -35,6 +35,7 @@ class _RegistroEstadoAnimoCompleteViewDetailsScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref
           .read(registroEstadoDeAnimoProvider.notifier)
           .cargarRegistrosEstadoDeAnimoById(widget.idRegistroEstadoAnimo);
@@ -56,7 +57,16 @@ class _RegistroEstadoAnimoCompleteViewDetailsScreenState
       body: record == null
           ? (state.isLoading
                 ? const MindsaveLoadingView(message: 'Cargando tu registro…')
-                : const CbtRecordNotFoundView())
+                : CbtRecordNotFoundView(
+                    message: state.recordError,
+                    onRetry: state.recordError == null
+                        ? null
+                        : () => ref
+                              .read(registroEstadoDeAnimoProvider.notifier)
+                              .cargarRegistrosEstadoDeAnimoById(
+                                widget.idRegistroEstadoAnimo,
+                              ),
+                  ))
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
               children: [
@@ -136,12 +146,22 @@ class _RegistroEstadoAnimoCompleteViewDetailsScreenState
       ),
     );
     if (confirmed != true) return;
-    await ref
-        .read(registroEstadoDeAnimoProvider.notifier)
-        .eliminarRegistroEstadoDeAnimo(record.id);
+    try {
+      await ref
+          .read(registroEstadoDeAnimoProvider.notifier)
+          .eliminarRegistroEstadoDeAnimo(record.id);
+    } catch (_) {
+      if (mounted) {
+        showCbtMessage(
+          context,
+          'No se pudo eliminar el registro. Inténtalo nuevamente.',
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     showCbtMessage(context, 'Registro eliminado.');
-    context.push('/registros');
+    context.go('/registros');
   }
 }
 
@@ -175,7 +195,7 @@ class _DetailsContent extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
-            onPressed: () => context.push('/registros'),
+            onPressed: () => context.go('/registros'),
             icon: const Icon(Icons.arrow_back_rounded),
             label: const Text('Mis registros'),
           ),

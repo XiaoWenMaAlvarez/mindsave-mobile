@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,15 +45,24 @@ class ChatNotifier extends Notifier<ChatState> {
   StreamSubscription<String>? _responseSubscription;
   String _chatId = '';
   int _localId = 0;
+  int _generation = 0;
+  int _conversationVersion = 0;
 
   @override
   ChatState build() {
+    _generation++;
+    _conversationVersion++;
     chatUser = ref.watch(userChatIaProvider);
     geminiUser = ref.watch(iaChatIaProvider);
     repository = ref.watch(chatIaRepositoryProvider);
     ref.onDispose(() => _responseSubscription?.cancel());
     return const ChatState();
   }
+
+  bool _isCurrent(int generation, int conversationVersion) =>
+      ref.mounted &&
+      generation == _generation &&
+      conversationVersion == _conversationVersion;
 
   String _nextId(String prefix) {
     _localId++;
@@ -71,17 +80,30 @@ class ChatNotifier extends Notifier<ChatState> {
       return;
     }
 
+    final generation = _generation;
+    final conversationVersion = _conversationVersion;
+    final activeChatId = _chatId;
+    final activeChatUser = chatUser;
+    final activeGeminiUser = geminiUser;
+    final activeRepository = repository;
+    if (activeChatId.isEmpty) {
+      state = state.copyWith(error: 'No se pudo identificar el chat');
+      return;
+    }
+
     state = state.copyWith(isGeminiThinking: true, error: null);
     try {
       final newMessages = <Message>[];
       for (final image in images) {
+        final imageSize = await image.length();
+        if (!_isCurrent(generation, conversationVersion)) return;
         newMessages.add(
           ImageMessage(
             id: _nextId('local-image'),
-            authorId: chatUser.id,
+            authorId: activeChatUser.id,
             createdAt: DateTime.now().toUtc(),
             source: image.path,
-            size: await image.length(),
+            size: imageSize,
           ),
         );
       }
@@ -89,7 +111,7 @@ class ChatNotifier extends Notifier<ChatState> {
         newMessages.add(
           TextMessage(
             id: _nextId('local-text'),
-            authorId: chatUser.id,
+            authorId: activeChatUser.id,
             text: trimmedText,
             createdAt: DateTime.now().toUtc(),
           ),
@@ -100,7 +122,7 @@ class ChatNotifier extends Notifier<ChatState> {
       newMessages.add(
         TextMessage(
           id: responseId,
-          authorId: geminiUser.id,
+          authorId: activeGeminiUser.id,
           text: 'Mindsave está pensando ...',
           createdAt: DateTime.now().toUtc(),
         ),
@@ -108,11 +130,16 @@ class ChatNotifier extends Notifier<ChatState> {
       state = state.copyWith(messages: [...state.messages, ...newMessages]);
 
       await _responseSubscription?.cancel();
-      _responseSubscription = repository
-          .sendMessageToChat(_chatId, trimmedText, files: images)
+      if (!_isCurrent(generation, conversationVersion)) return;
+      _responseSubscription = activeRepository
+          .sendMessageToChat(activeChatId, trimmedText, files: images)
           .listen(
-            (response) => _updateResponse(responseId, response),
+            (response) {
+              if (!_isCurrent(generation, conversationVersion)) return;
+              _updateResponse(responseId, response);
+            },
             onError: (Object _) {
+              if (!_isCurrent(generation, conversationVersion)) return;
               _replaceResponse(
                 responseId,
                 'No se pudo generar una respuesta. Inténtalo nuevamente.',
@@ -123,14 +150,17 @@ class ChatNotifier extends Notifier<ChatState> {
               );
             },
             onDone: () {
+              if (!_isCurrent(generation, conversationVersion)) return;
               state = state.copyWith(isGeminiThinking: false);
             },
           );
     } catch (_) {
-      state = state.copyWith(
-        isGeminiThinking: false,
-        error: 'No se pudo enviar el mensaje',
-      );
+      if (_isCurrent(generation, conversationVersion)) {
+        state = state.copyWith(
+          isGeminiThinking: false,
+          error: 'No se pudo enviar el mensaje',
+        );
+      }
     }
   }
 
@@ -154,19 +184,28 @@ class ChatNotifier extends Notifier<ChatState> {
 
   Future<void> loadPreviousMessages(String chatId) async {
     if (state.isInitialLoading && _chatId == chatId) return;
+    final generation = _generation;
+    final conversationVersion = ++_conversationVersion;
+    final activeRepository = repository;
+    final activeChatUser = chatUser;
+    final activeGeminiUser = geminiUser;
     _chatId = chatId;
     await _responseSubscription?.cancel();
+    if (!_isCurrent(generation, conversationVersion)) return;
     _responseSubscription = null;
     state = const ChatState(isInitialLoading: true);
 
     try {
-      final response = await repository.getMessagesFromChat(chatId);
+      final response = await activeRepository.getMessagesFromChat(chatId);
+      if (!_isCurrent(generation, conversationVersion)) return;
       final history = [...?response?.mensajes]
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
       final messages = <Message>[];
 
       for (final message in history) {
-        final authorId = message.role == 'user' ? chatUser.id : geminiUser.id;
+        final authorId = message.role == 'user'
+            ? activeChatUser.id
+            : activeGeminiUser.id;
         for (var index = 0; index < message.archivos.length; index++) {
           final file = message.archivos[index];
           if (file.mimeType.startsWith('image')) {
@@ -194,7 +233,9 @@ class ChatNotifier extends Notifier<ChatState> {
 
       state = ChatState(messages: messages);
     } catch (_) {
-      state = const ChatState(error: 'No se pudieron cargar los mensajes');
+      if (_isCurrent(generation, conversationVersion)) {
+        state = const ChatState(error: 'No se pudieron cargar los mensajes');
+      }
     }
   }
 }
@@ -205,12 +246,16 @@ final chatProvider = NotifierProvider<ChatNotifier, ChatState>(
 
 final chatControllerProvider = Provider<InMemoryChatController>((ref) {
   final controller = InMemoryChatController();
-  ref.listen<List<Message>>(
-    chatProvider.select((state) => state.messages),
-    (previous, next) => unawaited(_syncMessages(controller, next)),
-    fireImmediately: true,
-  );
-  ref.onDispose(controller.dispose);
+  var pendingSync = Future<void>.value();
+  ref.listen<List<Message>>(chatProvider.select((state) => state.messages), (
+    previous,
+    next,
+  ) {
+    pendingSync = pendingSync
+        .then((_) => _syncMessages(controller, next))
+        .onError((_, _) {});
+  }, fireImmediately: true);
+  ref.onDispose(() => unawaited(pendingSync.whenComplete(controller.dispose)));
   return controller;
 });
 

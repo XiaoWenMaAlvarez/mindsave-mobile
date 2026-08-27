@@ -15,28 +15,36 @@ const externalizacionChatBuilders = Builders(
   imageMessageBuilder: _buildImageMessage,
 );
 
-class ExternalizacionVocesChatScreen extends ConsumerWidget {
+class ExternalizacionVocesChatScreen extends ConsumerStatefulWidget {
   final String idChat;
 
   const ExternalizacionVocesChatScreen({required this.idChat, super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scaffoldKey = GlobalKey<ScaffoldState>();
+  ConsumerState<ExternalizacionVocesChatScreen> createState() =>
+      _ExternalizacionVocesChatScreenState();
+}
+
+class _ExternalizacionVocesChatScreenState
+    extends ConsumerState<ExternalizacionVocesChatScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
     final chats = ref.watch(chatListProvider).chats;
     var title = 'Chat';
     for (final chat in chats) {
-      if (chat.id == idChat) {
+      if (chat.id == widget.idChat) {
         title = chat.title;
         break;
       }
     }
 
     return Scaffold(
-      key: scaffoldKey,
+      key: _scaffoldKey,
       appBar: AppBar(title: Text(title)),
-      body: _ChatScreen(idChat: idChat),
-      endDrawer: SideMenu(scaffoldKey: scaffoldKey),
+      body: _ChatScreen(idChat: widget.idChat),
+      endDrawer: SideMenu(scaffoldKey: _scaffoldKey),
     );
   }
 }
@@ -57,6 +65,7 @@ class _ChatScreenState extends ConsumerState<_ChatScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(chatProvider.notifier).loadPreviousMessages(widget.idChat);
     });
   }

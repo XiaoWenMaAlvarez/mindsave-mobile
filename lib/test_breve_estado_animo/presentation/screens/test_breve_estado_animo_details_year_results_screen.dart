@@ -44,11 +44,10 @@ class _TestBreveEstadoAnimoDetailsYearResultsScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       final year = ref.read(selectedYearProvider);
-      ref
-          .read(testBreveEstadoDeAnimoProvider.notifier)
-          .loadTestBreveEstadoDeAnimoByYear(year);
+      await _loadYear(year);
     });
   }
 
@@ -153,9 +152,15 @@ class _TestBreveEstadoAnimoDetailsYearResultsScreenState
   Future<void> _changeYear(int? year) async {
     if (year == null || year == ref.read(selectedYearProvider)) return;
     ref.read(selectedYearProvider.notifier).select(year);
-    await ref
+    await _loadYear(year);
+  }
+
+  Future<void> _loadYear(int year) async {
+    final error = await ref
         .read(testBreveEstadoDeAnimoProvider.notifier)
         .loadTestBreveEstadoDeAnimoByYear(year);
+    if (!mounted || error == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
   }
 
   Future<void> _exportResults({

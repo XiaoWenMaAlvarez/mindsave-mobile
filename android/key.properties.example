@@ -1,0 +1,6 @@
+# Copia este archivo como android/key.properties y reemplaza los valores.
+# key.properties y los archivos *.jks/*.keystore están excluidos de Git.
+storePassword=REEMPLAZAR_CON_PASSWORD_DEL_KEYSTORE
+keyPassword=REEMPLAZAR_CON_PASSWORD_DE_LA_CLAVE
+keyAlias=upload
+storeFile=../upload-keystore.jks
