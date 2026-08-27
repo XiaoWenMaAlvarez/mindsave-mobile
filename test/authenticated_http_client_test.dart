@@ -163,6 +163,28 @@ void main() {
       expect(adapter.count('GET', '/api/unrelated'), 1);
     });
 
+    test('forceRefresh vuelve a consultar el historial del chat', () async {
+      final adapter = _RecordingAdapter();
+      final client = _createClient(adapter: adapter);
+      final datasource = ExternalizacionDeVocesDatasourceImpl(
+        httpClient: client,
+      );
+      addTearDown(client.close);
+
+      await datasource.getMessagesFromChat('chat-1');
+      await datasource.getMessagesFromChat('chat-1');
+      expect(
+        adapter.count('GET', '/api/chat-ia/get-messages-from-chat/chat-1'),
+        1,
+      );
+
+      await datasource.getMessagesFromChat('chat-1', forceRefresh: true);
+      expect(
+        adapter.count('GET', '/api/chat-ia/get-messages-from-chat/chat-1'),
+        2,
+      );
+    });
+
     test('el chat conserva texto si el UTF-8 termina incompleto', () async {
       final adapter = _RecordingAdapter()
         ..chatStreamChunks = [
@@ -309,6 +331,11 @@ class _RecordingAdapter implements HttpClientAdapter {
       data = {'results': <Object>[]};
     } else if (options.uri.path == '/api/chat-ia/new-chat') {
       data = {'result': 'chat-1'};
+    } else if (options.uri.path ==
+        '/api/chat-ia/get-messages-from-chat/chat-1') {
+      data = {
+        'result': {'id': 'chat-1', 'title': 'Chat', 'mensajes': []},
+      };
     } else {
       data = {
         'method': options.method,

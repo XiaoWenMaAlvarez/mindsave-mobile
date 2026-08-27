@@ -123,7 +123,10 @@ class _InitialScreenChatRepository implements ExternalizacionDeVocesRepository {
   }
 
   @override
-  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) async => null;
+  Future<ChatHistoryChatIa?> getMessagesFromChat(
+    String idChat, {
+    bool forceRefresh = false,
+  }) async => null;
 
   @override
   Stream<String> sendMessageToChat(

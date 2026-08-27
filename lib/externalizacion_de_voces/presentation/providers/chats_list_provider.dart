@@ -35,6 +35,9 @@ class ChatsListState {
 }
 
 class ChatsListNotifier extends Notifier<ChatsListState> {
+  static const _initialMessagesMaxAttempts = 30;
+  static const _initialMessagesRetryDelay = Duration(milliseconds: 500);
+
   late ExternalizacionDeVocesRepository repository;
   int _generation = 0;
 
@@ -67,12 +70,44 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
     return copy;
   }
 
+  Future<List<MensajeChatIa>?> _waitForInitialMessages({
+    required String chatId,
+    required int generation,
+    required ExternalizacionDeVocesRepository activeRepository,
+  }) async {
+    for (var attempt = 0; attempt < _initialMessagesMaxAttempts; attempt++) {
+      if (!_isCurrent(generation)) return null;
+      try {
+        final chat = await activeRepository.getMessagesFromChat(
+          chatId,
+          forceRefresh: true,
+        );
+        if (!_isCurrent(generation)) return null;
+        final messages = [...?chat?.mensajes]
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        final hasAssistantGreeting = messages.any(
+          (message) =>
+              message.role == 'assistant' && message.text.trim().isNotEmpty,
+        );
+        if (hasAssistantGreeting) return messages;
+      } catch (_) {
+        return null;
+      }
+
+      if (attempt + 1 < _initialMessagesMaxAttempts) {
+        await Future<void>.delayed(_initialMessagesRetryDelay);
+      }
+    }
+    return null;
+  }
+
   Future<void> addChat({required String title}) async {
     if (state.isLoading) return;
     final generation = _generation;
+    final activeRepository = repository;
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final newChat = await repository.createNewChat(title);
+      final newChat = await activeRepository.createNewChat(title);
       if (!_isCurrent(generation)) return;
       final now = DateTime.now();
       newChat.mensajes = [
@@ -84,34 +119,49 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
           archivos: const [],
         ),
       ];
-      state = state.copyWith(chats: _sortChats([newChat, ...state.chats]));
 
+      String greetingResponse = '';
+      var greetingStreamCompleted = false;
       try {
-        String greetingResponse = '';
-        await for (final chunk in repository.sendMessageToChat(
+        await for (final chunk in activeRepository.sendMessageToChat(
           newChat.id,
           'Hola',
         )) {
           if (!_isCurrent(generation)) return;
           greetingResponse = chunk;
         }
+        greetingStreamCompleted = true;
         if (!_isCurrent(generation)) return;
-        if (greetingResponse.isNotEmpty) {
-          newChat.mensajes = [
-            ...newChat.mensajes,
-            MensajeChatIa(
-              id: '${newChat.id}-assistant-greeting',
-              text: greetingResponse,
-              createdAt: DateTime.now().add(const Duration(milliseconds: 100)),
-              role: 'assistant',
-              archivos: const [],
-            ),
-          ];
-          state = state.copyWith(chats: _sortChats([...state.chats]));
-        }
       } catch (_) {
-        // Si el saludo inicial de la IA falla, el chat ya fue creado y conservado.
+        // El backend puede completar el saludo aunque el stream se cierre antes.
       }
+
+      List<MensajeChatIa>? persistedMessages;
+      if (!greetingStreamCompleted || greetingResponse.trim().isEmpty) {
+        persistedMessages = await _waitForInitialMessages(
+          chatId: newChat.id,
+          generation: generation,
+          activeRepository: activeRepository,
+        );
+      }
+      if (!_isCurrent(generation)) return;
+
+      if (persistedMessages != null) {
+        newChat.mensajes = persistedMessages;
+      } else if (greetingResponse.trim().isNotEmpty) {
+        newChat.mensajes = [
+          ...newChat.mensajes,
+          MensajeChatIa(
+            id: '${newChat.id}-assistant-greeting',
+            text: greetingResponse,
+            createdAt: DateTime.now().add(const Duration(milliseconds: 100)),
+            role: 'assistant',
+            archivos: const [],
+          ),
+        ];
+      }
+
+      state = state.copyWith(chats: _sortChats([newChat, ...state.chats]));
     } catch (e) {
       if (!_isCurrent(generation)) return;
       if (e is DioException) {

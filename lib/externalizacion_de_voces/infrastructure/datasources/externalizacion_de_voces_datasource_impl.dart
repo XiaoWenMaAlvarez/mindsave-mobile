@@ -12,6 +12,11 @@ class ExternalizacionDeVocesDatasourceImpl
     r'/api/chat-ia/get-chats-by-user(?:\?|$)',
   );
 
+  static RegExp _messagesCachePattern(String idChat) => RegExp(
+    '/api/chat-ia/get-messages-from-chat/${RegExp.escape(idChat)}'
+    r'(?:\?|$)',
+  );
+
   final AuthenticatedHttpClient httpClient;
 
   Dio get dio => httpClient.dio;
@@ -23,14 +28,7 @@ class ExternalizacionDeVocesDatasourceImpl
       httpClient.invalidate(_chatsListCachePattern),
     ];
     if (idChat != null) {
-      invalidations.add(
-        httpClient.invalidate(
-          RegExp(
-            '/api/chat-ia/get-messages-from-chat/${RegExp.escape(idChat)}'
-            r'(?:\?|$)',
-          ),
-        ),
-      );
+      invalidations.add(httpClient.invalidate(_messagesCachePattern(idChat)));
     }
     await Future.wait(invalidations);
   }
@@ -87,7 +85,13 @@ class ExternalizacionDeVocesDatasourceImpl
   }
 
   @override
-  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) async {
+  Future<ChatHistoryChatIa?> getMessagesFromChat(
+    String idChat, {
+    bool forceRefresh = false,
+  }) async {
+    if (forceRefresh) {
+      await httpClient.invalidate(_messagesCachePattern(idChat));
+    }
     final response = await dio.get(
       "/api/chat-ia/get-messages-from-chat/$idChat",
     );

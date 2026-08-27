@@ -6,7 +6,10 @@ abstract class ExternalizacionDeVocesDatasource {
 
   Future<List<ChatHistoryChatIa>> getChatsByUser();
 
-  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat);
+  Future<ChatHistoryChatIa?> getMessagesFromChat(
+    String idChat, {
+    bool forceRefresh = false,
+  });
 
   Future<void> deleteChat(String idChat);
 

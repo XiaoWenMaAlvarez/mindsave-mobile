@@ -25,8 +25,11 @@ class ExternalizacionDeVocesRepositoryImpl
   }
 
   @override
-  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) {
-    return datasource.getMessagesFromChat(idChat);
+  Future<ChatHistoryChatIa?> getMessagesFromChat(
+    String idChat, {
+    bool forceRefresh = false,
+  }) {
+    return datasource.getMessagesFromChat(idChat, forceRefresh: forceRefresh);
   }
 
   @override

@@ -394,6 +394,84 @@ void main() {
     },
   );
 
+  test(
+    'ChatsListNotifier no publica el chat mientras carga el saludo inicial',
+    () async {
+      final greetingController = StreamController<String>();
+      addTearDown(() async {
+        if (!greetingController.isClosed) await greetingController.close();
+      });
+      final repo = _FakeChatRepository(
+        responseStream: greetingController.stream,
+      );
+      final container = ProviderContainer(
+        overrides: [chatIaRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+
+      final creation = container
+          .read(chatListProvider.notifier)
+          .addChat(title: 'Chat en creación');
+      await pumpEventQueue();
+
+      expect(container.read(chatListProvider).isLoading, isTrue);
+      expect(container.read(chatListProvider).chats, isEmpty);
+
+      greetingController.add('¡Hola! ¿En qué te ayudo?');
+      await greetingController.close();
+      await creation;
+
+      final state = container.read(chatListProvider);
+      expect(state.isLoading, isFalse);
+      expect(state.chats, hasLength(1));
+      expect(state.chats.single.mensajes, hasLength(2));
+    },
+  );
+
+  test(
+    'ChatsListNotifier espera el historial si el stream inicial queda vacío',
+    () async {
+      final now = DateTime.now();
+      final repo = _FakeChatRepository(
+        responseStream: const Stream.empty(),
+        history: ChatHistoryChatIa(
+          id: 'chat-1',
+          title: 'Chat recuperado',
+          mensajes: [
+            MensajeChatIa(
+              id: 'user-greeting',
+              text: 'Hola',
+              createdAt: now,
+              role: 'user',
+              archivos: const [],
+            ),
+            MensajeChatIa(
+              id: 'assistant-greeting',
+              text: '¡Hola! ¿En qué te ayudo?',
+              createdAt: now.add(const Duration(milliseconds: 100)),
+              role: 'assistant',
+              archivos: const [],
+            ),
+          ],
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [chatIaRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(chatListProvider.notifier)
+          .addChat(title: 'Chat recuperado');
+
+      final state = container.read(chatListProvider);
+      expect(repo.forceRefreshRequested, isTrue);
+      expect(state.chats, hasLength(1));
+      expect(state.chats.single.mensajes, hasLength(2));
+      expect(state.chats.single.mensajes.last.role, 'assistant');
+    },
+  );
+
   test('ChatsListNotifier ordena los chats por mensaje más reciente', () async {
     final now = DateTime.now();
     final olderChat = ChatHistoryChatIa(
@@ -494,7 +572,10 @@ class _FakeChatRepositoryWithFailingStream
   Future<List<ChatHistoryChatIa>> getChatsByUser() async => [];
 
   @override
-  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) async => null;
+  Future<ChatHistoryChatIa?> getMessagesFromChat(
+    String idChat, {
+    bool forceRefresh = false,
+  }) async => throw Exception('offline');
 
   @override
   Stream<String> sendMessageToChat(
@@ -620,7 +701,10 @@ class _DelayedChatRepository implements ExternalizacionDeVocesRepository {
   Future<List<ChatHistoryChatIa>> getChatsByUser() async => [];
 
   @override
-  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) {
+  Future<ChatHistoryChatIa?> getMessagesFromChat(
+    String idChat, {
+    bool forceRefresh = false,
+  }) {
     return (_loads[idChat] ??= Completer<ChatHistoryChatIa?>()).future;
   }
 
@@ -696,6 +780,7 @@ class _FakeChatRepository implements ExternalizacionDeVocesRepository {
   final List<String> responses;
   final Stream<String>? responseStream;
   final List<ChatHistoryChatIa> chatsList;
+  bool forceRefreshRequested = false;
 
   _FakeChatRepository({
     this.history,
@@ -720,8 +805,13 @@ class _FakeChatRepository implements ExternalizacionDeVocesRepository {
   Future<List<ChatHistoryChatIa>> getChatsByUser() async => chatsList;
 
   @override
-  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) async =>
-      history;
+  Future<ChatHistoryChatIa?> getMessagesFromChat(
+    String idChat, {
+    bool forceRefresh = false,
+  }) async {
+    forceRefreshRequested = forceRefreshRequested || forceRefresh;
+    return history;
+  }
 
   @override
   Stream<String> sendMessageToChat(
