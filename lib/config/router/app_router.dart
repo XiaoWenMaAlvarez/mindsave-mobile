@@ -83,12 +83,7 @@ final goRouterProvider = Provider((ref) {
         path: "/registros",
         builder: (context, state) => const RegistrosScreen(),
       ),
-
-      GoRoute(
-        path: "/modules",
-        builder: (context, state) => const ModulesScreen(),
-      ),
-
+      
       GoRoute(
         path: "/testBreveEstadoAnimo/0",
         builder: (context, state) {
