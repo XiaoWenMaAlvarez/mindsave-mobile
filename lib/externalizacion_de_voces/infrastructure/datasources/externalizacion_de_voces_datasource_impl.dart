@@ -118,7 +118,7 @@ class ExternalizacionDeVocesDatasourceImpl
         );
       }
 
-      final response = await dio.post(
+      final response = await dio.post<ResponseBody>(
         "/api/chat-ia/send-message-to-chat/$idChat",
         data: formData,
         options: Options(responseType: ResponseType.stream),
@@ -126,8 +126,12 @@ class ExternalizacionDeVocesDatasourceImpl
       requestAccepted = true;
       await _invalidateChatCache(idChat);
 
-      final stream = (response.data.stream as Stream<List<int>>).transform(
-        utf8.decoder,
+      final responseBody = response.data;
+      if (responseBody == null) {
+        throw StateError('El servidor no entregó una respuesta');
+      }
+      final stream = responseBody.stream.cast<List<int>>().transform(
+        const Utf8Decoder(allowMalformed: true),
       );
       String buffer = '';
 

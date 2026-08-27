@@ -247,6 +247,34 @@ void main() {
   });
 
   test(
+    'ChatNotifier conserva la respuesta si el stream falla al cerrarse',
+    () async {
+      final repository = _FakeChatRepository(
+        responseStream: Stream<String>.multi((controller) {
+          controller.add('Respuesta completa');
+          controller.addError(Exception('El servidor cerró el stream'));
+          controller.close();
+        }),
+      );
+      final container = _chatContainer(repository);
+      addTearDown(container.dispose);
+      final notifier = container.read(chatProvider.notifier);
+
+      await notifier.loadPreviousMessages('chat-1');
+      await notifier.addMessage(text: 'Hola');
+      await pumpEventQueue();
+
+      final state = container.read(chatProvider);
+      expect(state.isGeminiThinking, isFalse);
+      expect(state.error, isNull);
+      expect(
+        state.messages.whereType<chat.TextMessage>().last.text,
+        'Respuesta completa',
+      );
+    },
+  );
+
+  test(
     'el streaming actualiza el mensaje sin reemplazar toda la lista',
     () async {
       final repository = _FakeChatRepository(
@@ -666,6 +694,7 @@ class _FakeChatRepository implements ExternalizacionDeVocesRepository {
   final bool failCreate;
   final bool failCreateGeneric;
   final List<String> responses;
+  final Stream<String>? responseStream;
   final List<ChatHistoryChatIa> chatsList;
 
   _FakeChatRepository({
@@ -673,6 +702,7 @@ class _FakeChatRepository implements ExternalizacionDeVocesRepository {
     this.failCreate = false,
     this.failCreateGeneric = false,
     this.responses = const ['Respuesta'],
+    this.responseStream,
     this.chatsList = const [],
   });
 
@@ -699,6 +729,6 @@ class _FakeChatRepository implements ExternalizacionDeVocesRepository {
     String prompt, {
     List<XFile> files = const [],
   }) {
-    return Stream.fromIterable(responses);
+    return responseStream ?? Stream.fromIterable(responses);
   }
 }

@@ -162,6 +162,30 @@ void main() {
       expect(adapter.count('GET', '/api/chat-ia/get-chats-by-user'), 2);
       expect(adapter.count('GET', '/api/unrelated'), 1);
     });
+
+    test('el chat conserva texto si el UTF-8 termina incompleto', () async {
+      final adapter = _RecordingAdapter()
+        ..chatStreamChunks = [
+          Uint8List.fromList(utf8.encode('Respuesta recibida')),
+          Uint8List.fromList(const [0xC3]),
+        ];
+      final client = _createClient(adapter: adapter);
+      final datasource = ExternalizacionDeVocesDatasourceImpl(
+        httpClient: client,
+      );
+      addTearDown(client.close);
+
+      final responses = await datasource
+          .sendMessageToChat('chat-1', 'Hola')
+          .toList();
+
+      expect(responses, isNotEmpty);
+      expect(responses.last, startsWith('Respuesta recibida'));
+      expect(
+        adapter.count('POST', '/api/chat-ia/send-message-to-chat/chat-1'),
+        1,
+      );
+    });
   });
 
   test(
@@ -251,6 +275,7 @@ class _RecordingAdapter implements HttpClientAdapter {
   final Map<String, int> _counts = {};
   bool failNetwork = false;
   int statusCode = 200;
+  List<Uint8List>? chatStreamChunks;
 
   int count(String method, String path) => _counts['$method $path'] ?? 0;
 
@@ -268,6 +293,14 @@ class _RecordingAdapter implements HttpClientAdapter {
         requestOptions: options,
         type: DioExceptionType.connectionError,
         error: 'offline',
+      );
+    }
+
+    if (options.responseType == ResponseType.stream &&
+        options.uri.path.startsWith('/api/chat-ia/send-message-to-chat/')) {
+      return ResponseBody(
+        Stream<Uint8List>.fromIterable(chatStreamChunks ?? const []),
+        statusCode,
       );
     }
 

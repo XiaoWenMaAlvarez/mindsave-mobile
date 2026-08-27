@@ -131,15 +131,22 @@ class ChatNotifier extends Notifier<ChatState> {
 
       await _responseSubscription?.cancel();
       if (!_isCurrent(generation, conversationVersion)) return;
+      var hasResponse = false;
       _responseSubscription = activeRepository
           .sendMessageToChat(activeChatId, trimmedText, files: images)
           .listen(
             (response) {
               if (!_isCurrent(generation, conversationVersion)) return;
+              if (response.isEmpty) return;
+              hasResponse = true;
               _updateResponse(responseId, response);
             },
             onError: (Object _) {
               if (!_isCurrent(generation, conversationVersion)) return;
+              if (hasResponse) {
+                state = state.copyWith(isGeminiThinking: false);
+                return;
+              }
               _replaceResponse(
                 responseId,
                 'No se pudo generar una respuesta. Inténtalo nuevamente.',
@@ -151,8 +158,20 @@ class ChatNotifier extends Notifier<ChatState> {
             },
             onDone: () {
               if (!_isCurrent(generation, conversationVersion)) return;
+              if (!hasResponse) {
+                _replaceResponse(
+                  responseId,
+                  'No se pudo generar una respuesta. Inténtalo nuevamente.',
+                );
+                state = state.copyWith(
+                  isGeminiThinking: false,
+                  error: 'No se pudo enviar el mensaje',
+                );
+                return;
+              }
               state = state.copyWith(isGeminiThinking: false);
             },
+            cancelOnError: true,
           );
     } catch (_) {
       if (_isCurrent(generation, conversationVersion)) {
