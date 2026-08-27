@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
@@ -67,10 +67,23 @@ class ExternalizacionDeVocesDatasourceImpl
     final List<Map<String, dynamic>> responseJson =
         List<Map<String, dynamic>>.from(response.data["results"]);
 
-    //TODO: Ordenar chats por mensaje más reciente
-    return responseJson
+    final chats = responseJson
         .map((chatJson) => ChatHistoryChatIa.fromJson(chatJson))
         .toList();
+    chats.sort((a, b) {
+      final aDate = a.mensajes.isNotEmpty
+          ? a.mensajes
+                .map((m) => m.createdAt)
+                .reduce((x, y) => x.isAfter(y) ? x : y)
+          : DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.mensajes.isNotEmpty
+          ? b.mensajes
+                .map((m) => m.createdAt)
+                .reduce((x, y) => x.isAfter(y) ? x : y)
+          : DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    });
+    return chats;
   }
 
   @override
@@ -113,11 +126,12 @@ class ExternalizacionDeVocesDatasourceImpl
       requestAccepted = true;
       await _invalidateChatCache(idChat);
 
-      final stream = response.data.stream as Stream<List<int>>;
+      final stream = (response.data.stream as Stream<List<int>>).transform(
+        utf8.decoder,
+      );
       String buffer = '';
 
-      await for (final chunk in stream) {
-        final chunkString = utf8.decode(chunk, allowMalformed: true);
+      await for (final chunkString in stream) {
         buffer += chunkString;
         yield buffer;
       }

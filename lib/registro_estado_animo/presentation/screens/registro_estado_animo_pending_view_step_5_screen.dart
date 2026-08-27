@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
@@ -23,6 +23,7 @@ class _RegistroEstadoAnimoPendingViewStep5ScreenState
     extends ConsumerState<RegistroEstadoAnimoPendingViewStep5Screen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKeys = <GlobalKey<FormState>>[];
+  RegistroEstadoAnimo? _originalSnapshot;
 
   @override
   void initState() {
@@ -49,7 +50,10 @@ class _RegistroEstadoAnimoPendingViewStep5ScreenState
     final record = ref
         .read(registroEstadoDeAnimoProvider.notifier)
         .getRegistroEstadoDeAnimoById(widget.idRegistroEstadoAnimo);
-    if (record != null) _ensureFormKeys(record.listaPensamientos.length);
+    if (record != null) {
+      _ensureFormKeys(record.listaPensamientos.length);
+      _originalSnapshot ??= RegistroEstadoAnimo.fromJson(record.toJson());
+    }
 
     return CbtFlowScaffold(
       scaffoldKey: _scaffoldKey,
@@ -58,10 +62,12 @@ class _RegistroEstadoAnimoPendingViewStep5ScreenState
       description:
           'Agrega un pensamiento alternativo y re-evalúa tu creencia en el negativo.',
       body: record == null
-          ? const MindsaveLoadingView(
-              compact: true,
-              message: 'Cargando tu registro…',
-            )
+          ? (state.isLoading
+                ? const MindsaveLoadingView(
+                    compact: true,
+                    message: 'Cargando tu registro…',
+                  )
+                : const CbtRecordNotFoundView())
           : Column(
               children: [
                 for (
@@ -91,6 +97,13 @@ class _RegistroEstadoAnimoPendingViewStep5ScreenState
       onSave: () => ref
           .read(registroEstadoDeAnimoProvider.notifier)
           .editarRegistroEstadoDeAnimo(record),
+      onDiscard: () {
+        if (_originalSnapshot != null) {
+          ref
+              .read(registroEstadoDeAnimoProvider.notifier)
+              .restaurarRegistroEstadoDeAnimo(_originalSnapshot!);
+        }
+      },
     );
     if (shouldLeave && mounted) {
       context.push('/registroEstadoAnimo/3/${record.id}');

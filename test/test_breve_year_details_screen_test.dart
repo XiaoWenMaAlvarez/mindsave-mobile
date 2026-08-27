@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mindsave/config/theme/app_theme.dart';
 import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
 import 'package:mindsave/test_breve_estado_animo/domain/repositories/test_breve_estado_de_animo_repository.dart';
+import 'package:mindsave/test_breve_estado_animo/infrastructure/models/models.dart';
 import 'package:mindsave/test_breve_estado_animo/presentation/providers/providers.dart';
 import 'package:mindsave/test_breve_estado_animo/presentation/screens/test_breve_estado_animo_daily_results_screen.dart';
 import 'package:mindsave/test_breve_estado_animo/presentation/screens/test_breve_estado_animo_details_year_results_screen.dart';
@@ -123,7 +124,7 @@ void main() {
       ),
       depresionTestBreve: DepresionTestBreve(tristeza: 1),
       impulsoSuicidaTestBreve: ImpulsoSuicidaTestBreve(),
-      notas: 'Apoyo & descanso',
+      notas: 'Apoyo & descanso con tildes: evaluación, ánimo',
     );
 
     final pdf = await TestBreveResultsExporter.pdf(
@@ -133,6 +134,9 @@ void main() {
     expect(pdf.fileName, 'mindsave_test_breve_2026.pdf');
     expect(ascii.decode(pdf.bytes.take(4).toList()), '%PDF');
     expect(pdf.bytes.length, greaterThan(500));
+
+    final pdfString = latin1.decode(pdf.bytes, allowInvalid: true);
+    expect(pdfString, contains('Seguimiento anual del estado de ánimo'));
 
     final excel = TestBreveResultsExporter.excel(
       year: 2026,
@@ -156,6 +160,190 @@ void main() {
     final worksheetXml = utf8.decode(worksheet.readBytes()!);
     expect(worksheetXml, contains('14/08/2026'));
     expect(worksheetXml, contains('Apoyo &amp; descanso'));
+  });
+
+  test(
+    'TodayTestBreveEstadoDeAnimoNotifier no conserva el test de un día anterior',
+    () async {
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      final yesterdayTest = TestBreveEstadoDeAnimo(
+        fechaCreacion: yesterday,
+        sentimientosAnsiedadEmocionalTestBreve:
+            SentimientosAnsiedadEmocionalTestBreve(),
+        sentimientosAnsiedadFisicaTestBreve:
+            SentimientosAnsiedadFisicaTestBreve(),
+        depresionTestBreve: DepresionTestBreve(),
+        impulsoSuicidaTestBreve: ImpulsoSuicidaTestBreve(),
+      );
+
+      final today = DateTime.now();
+      final todayTest = TestBreveEstadoDeAnimo(
+        fechaCreacion: today,
+        sentimientosAnsiedadEmocionalTestBreve:
+            SentimientosAnsiedadEmocionalTestBreve(angustiado: 2),
+        sentimientosAnsiedadFisicaTestBreve:
+            SentimientosAnsiedadFisicaTestBreve(),
+        depresionTestBreve: DepresionTestBreve(),
+        impulsoSuicidaTestBreve: ImpulsoSuicidaTestBreve(),
+      );
+
+      final repo = _FakeTestRepository([todayTest]);
+      final container = ProviderContainer(
+        overrides: [
+          testBreveEstadoDeAnimoRepositoryProvider.overrideWithValue(repo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(
+        todayTestBreveEstadoDeAnimoProvider.notifier,
+      );
+
+      // Simular que el provider tenía en memoria el test de ayer
+      notifier.localSetTestBreveRealizadoHoy(yesterdayTest);
+      expect(
+        container.read(todayTestBreveEstadoDeAnimoProvider)?.fechaCreacion,
+        yesterday,
+      );
+
+      // Al llamar a setTestBreveRealizadoHoy, detecta que es de otro día y consulta hoy
+      await notifier.setTestBreveRealizadoHoy();
+      expect(repo.todayRequests, 1);
+      expect(
+        container.read(todayTestBreveEstadoDeAnimoProvider)?.fechaCreacion,
+        today,
+      );
+
+      // Si se vuelve a llamar estando en el mismo día, no repite la petición
+      await notifier.setTestBreveRealizadoHoy();
+      expect(repo.todayRequests, 1);
+    },
+  );
+
+  test('los DTOs del test breve solo aceptan valores entre 0 y 4', () {
+    // Valores válidos (0 a 4)
+    expect(
+      () => DepresionTestBreveResponse(
+        tristeza: 4,
+        desesperanza: 0,
+        bajaAutoestima: 2,
+        faltaDeValor: 1,
+        perdidaDeSatisfaccion: 3,
+      ),
+      returnsNormally,
+    );
+
+    expect(
+      () => ImpulsoSuicidaTestBreveResponse(
+        pensamientosSuicidas: 4,
+        deseosDeMorir: 0,
+      ),
+      returnsNormally,
+    );
+
+    expect(
+      () => SentimientosAnsiedadEmocionalTestBreveResponse(
+        angustiado: 4,
+        nervioso: 1,
+        preocupado: 2,
+        asustado: 3,
+        tenso: 0,
+      ),
+      returnsNormally,
+    );
+
+    expect(
+      () => SentimientosAnsiedadFisicaTestBreveResponse(
+        palpitaciones: 4,
+        sudoracion: 0,
+        temblores: 1,
+        dificultadRespirar: 2,
+        ahogo: 3,
+        dolorPecho: 4,
+        nauseas: 0,
+        mareos: 1,
+        sensacionIrrealidad: 2,
+        inestabilidadHormigueos: 3,
+      ),
+      returnsNormally,
+    );
+
+    // Valor fuera de rango (5) debe lanzar AssertionError
+    expect(
+      () => DepresionTestBreveResponse(
+        tristeza: 5,
+        desesperanza: 0,
+        bajaAutoestima: 0,
+        faltaDeValor: 0,
+        perdidaDeSatisfaccion: 0,
+      ),
+      throwsA(isA<AssertionError>()),
+    );
+
+    expect(
+      () => ImpulsoSuicidaTestBreveResponse(
+        pensamientosSuicidas: 5,
+        deseosDeMorir: 0,
+      ),
+      throwsA(isA<AssertionError>()),
+    );
+
+    expect(
+      () => SentimientosAnsiedadEmocionalTestBreveResponse(
+        angustiado: 5,
+        nervioso: 0,
+        preocupado: 0,
+        asustado: 0,
+        tenso: 0,
+      ),
+      throwsA(isA<AssertionError>()),
+    );
+
+    expect(
+      () => SentimientosAnsiedadFisicaTestBreveResponse(
+        palpitaciones: 5,
+        sudoracion: 0,
+        temblores: 0,
+        dificultadRespirar: 0,
+        ahogo: 0,
+        dolorPecho: 0,
+        nauseas: 0,
+        mareos: 0,
+        sensacionIrrealidad: 0,
+        inestabilidadHormigueos: 0,
+      ),
+      throwsA(isA<AssertionError>()),
+    );
+
+    final severo = SentimientosAnsiedadFisicaTestBreveResponse(
+      palpitaciones: 3,
+      sudoracion: 3,
+      temblores: 3,
+      dificultadRespirar: 3,
+      ahogo: 3,
+      dolorPecho: 3,
+      nauseas: 3,
+      mareos: 3,
+      sensacionIrrealidad: 3,
+      inestabilidadHormigueos: 3,
+    );
+    expect(severo.totalScore, 30);
+    expect(severo.result, 'Síntomas físicos de ansiedad severa');
+
+    final extremo = SentimientosAnsiedadFisicaTestBreveResponse(
+      palpitaciones: 4,
+      sudoracion: 4,
+      temblores: 4,
+      dificultadRespirar: 4,
+      ahogo: 4,
+      dolorPecho: 4,
+      nauseas: 4,
+      mareos: 4,
+      sensacionIrrealidad: 4,
+      inestabilidadHormigueos: 4,
+    );
+    expect(extremo.totalScore, 40);
+    expect(extremo.result, 'Síntomas físicos de ansiedad extrema');
   });
 }
 

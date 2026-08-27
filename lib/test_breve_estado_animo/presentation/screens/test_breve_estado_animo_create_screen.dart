@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
@@ -277,7 +277,7 @@ void _mostrarMensajeEliminarTestBreveEstadoDeAnimo(
 ) {
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (dialogContext) => AlertDialog(
       title: const Text('Eliminar Test Breve de Estado de Ánimo'),
       content: const Text(
         '¿Está seguro que desea eliminar el test breve de estado de ánimo?',
@@ -285,21 +285,33 @@ void _mostrarMensajeEliminarTestBreveEstadoDeAnimo(
       actions: [
         FilledButton(
           onPressed: () async {
-            ref
-                .read(todayTestBreveEstadoDeAnimoProvider.notifier)
-                .eliminarTestBreveRealizadoHoy();
-            context.pop();
-            _showSnackBar(context, 'Test Breve de Estado de Ánimo eliminado');
-            context.push("/testBreveEstadoAnimo/0");
-            await ref
-                .read(testBreveEstadoDeAnimoProvider.notifier)
-                .eliminarTestBreveEstadoDeAnimoDeHoy();
+            dialogContext.pop();
+            try {
+              await ref
+                  .read(testBreveEstadoDeAnimoProvider.notifier)
+                  .eliminarTestBreveEstadoDeAnimoDeHoy();
+              ref
+                  .read(todayTestBreveEstadoDeAnimoProvider.notifier)
+                  .eliminarTestBreveRealizadoHoy();
+              if (context.mounted) {
+                _showSnackBar(
+                  context,
+                  'Test Breve de Estado de Ánimo eliminado',
+                );
+              }
+            } catch (_) {
+              if (context.mounted) {
+                _showSnackBar(
+                  context,
+                  'No se pudo eliminar el test. Inténtalo nuevamente.',
+                );
+              }
+            }
           },
           child: const Text('Si, eliminar'),
         ),
-
         TextButton(
-          onPressed: () => context.pop(),
+          onPressed: () => dialogContext.pop(),
           child: const Text('No, cancelar'),
         ),
       ],

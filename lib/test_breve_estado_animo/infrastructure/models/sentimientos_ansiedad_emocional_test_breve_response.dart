@@ -13,16 +13,16 @@ class SentimientosAnsiedadEmocionalTestBreveResponse {
     required this.tenso,
   }) : assert(
          angustiado >= 0 &&
-             angustiado <= 5 &&
+             angustiado <= 4 &&
              nervioso >= 0 &&
-             nervioso <= 5 &&
+             nervioso <= 4 &&
              preocupado >= 0 &&
-             preocupado <= 5 &&
+             preocupado <= 4 &&
              asustado >= 0 &&
-             asustado <= 5 &&
+             asustado <= 4 &&
              tenso >= 0 &&
-             tenso <= 5,
-         'Los valores deben estar entre 0 y 5',
+             tenso <= 4,
+         'Los valores deben estar entre 0 y 4',
        );
 
   int get totalScore {

@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
 import 'providers.dart';
 
@@ -18,6 +18,7 @@ class TestBreveEstadoDeAnimoNotifier
   late DeleteTodayTestBreveEstadoDeAnimo _deleteTodayTestBreveEstadoDeAnimo;
   late EditarTestBreveEstadoDeAnimoDeHoy _editarTestBreveEstadoDeAnimoDeHoy;
   late SetIsLoading _setIsLoading;
+  final Set<int> _loadedYears = {};
 
   @override
   List<TestBreveEstadoDeAnimo> build() {
@@ -30,19 +31,31 @@ class TestBreveEstadoDeAnimoNotifier
     _editarTestBreveEstadoDeAnimoDeHoy =
         repository.editarTestBreveEstadoDeAnimoDeHoy;
     _setIsLoading = ref.read(isLoadingProvider.notifier).setLoading;
+    _loadedYears.clear();
     return [];
   }
 
+  bool _isSameDate(DateTime a, DateTime b) {
+    final localA = a.toLocal();
+    final localB = b.toLocal();
+    return localA.year == localB.year &&
+        localA.month == localB.month &&
+        localA.day == localB.day;
+  }
+
   Future<void> loadTestBreveEstadoDeAnimoByYear(int year) async {
-    if (state.isNotEmpty &&
-        state.any((test) => test.fechaCreacion.year == year)) {
+    if (_loadedYears.contains(year)) {
       return;
     }
     _setIsLoading(true);
     try {
       final List<TestBreveEstadoDeAnimo> newTestsBreveEstadoDeAnimo =
           await _fetchTestBreveEstadoDeAnimoByYear(year);
-      state = [...state, ...newTestsBreveEstadoDeAnimo];
+      _loadedYears.add(year);
+      state = [
+        ...state.where((test) => test.fechaCreacion.toLocal().year != year),
+        ...newTestsBreveEstadoDeAnimo,
+      ];
     } finally {
       _setIsLoading(false);
     }
@@ -55,10 +68,17 @@ class TestBreveEstadoDeAnimoNotifier
       _setIsLoading(true);
       await _saveTestBreveEstadoDeAnimo(nvoTestBreveEstadoDeAnimo);
 
-      if (state.isNotEmpty) {
-        if (state.first.fechaCreacion.year == DateTime.now().year) {
-          state = [...state, nvoTestBreveEstadoDeAnimo];
-        }
+      final nvoYear = nvoTestBreveEstadoDeAnimo.fechaCreacion.toLocal().year;
+      if (_loadedYears.contains(nvoYear)) {
+        state = [
+          ...state.where(
+            (t) => !_isSameDate(
+              t.fechaCreacion,
+              nvoTestBreveEstadoDeAnimo.fechaCreacion,
+            ),
+          ),
+          nvoTestBreveEstadoDeAnimo,
+        ];
       }
       return "OK";
     } catch (e) {
@@ -72,18 +92,8 @@ class TestBreveEstadoDeAnimoNotifier
     _setIsLoading(true);
     try {
       await _deleteTodayTestBreveEstadoDeAnimo();
-
-      if (state.isNotEmpty) {
-        if (state.first.fechaCreacion.year == DateTime.now().year) {
-          state = state.where((TestBreveEstadoDeAnimo testBreveEstadoDeAnimo) {
-            return !(testBreveEstadoDeAnimo.fechaCreacion.year ==
-                    DateTime.now().year &&
-                testBreveEstadoDeAnimo.fechaCreacion.month ==
-                    DateTime.now().month &&
-                testBreveEstadoDeAnimo.fechaCreacion.day == DateTime.now().day);
-          }).toList();
-        }
-      }
+      final now = DateTime.now();
+      state = state.where((t) => !_isSameDate(t.fechaCreacion, now)).toList();
     } finally {
       _setIsLoading(false);
     }
@@ -95,19 +105,17 @@ class TestBreveEstadoDeAnimoNotifier
     _setIsLoading(true);
     try {
       await _editarTestBreveEstadoDeAnimoDeHoy(nvoTestBreveEstadoDeAnimo);
-
-      if (state.isNotEmpty) {
-        if (state.first.fechaCreacion.year == DateTime.now().year) {
-          state = state.where((TestBreveEstadoDeAnimo testBreveEstadoDeAnimo) {
-            return !(testBreveEstadoDeAnimo.fechaCreacion.year ==
-                    DateTime.now().year &&
-                testBreveEstadoDeAnimo.fechaCreacion.month ==
-                    DateTime.now().month &&
-                testBreveEstadoDeAnimo.fechaCreacion.day == DateTime.now().day);
-          }).toList();
-
-          state = [...state, nvoTestBreveEstadoDeAnimo];
-        }
+      final nvoYear = nvoTestBreveEstadoDeAnimo.fechaCreacion.toLocal().year;
+      if (_loadedYears.contains(nvoYear)) {
+        state = [
+          ...state.where(
+            (t) => !_isSameDate(
+              t.fechaCreacion,
+              nvoTestBreveEstadoDeAnimo.fechaCreacion,
+            ),
+          ),
+          nvoTestBreveEstadoDeAnimo,
+        ];
       }
     } finally {
       _setIsLoading(false);

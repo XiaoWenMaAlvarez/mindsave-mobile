@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
@@ -75,7 +75,8 @@ class _FollowUpViewState extends ConsumerState<_FollowUpViewBody> {
         .watch(testBreveEstadoDeAnimoProvider)
         .where(
           (testBreveEstadoDeAnimo) =>
-              testBreveEstadoDeAnimo.fechaCreacion.year == yearSelected,
+              testBreveEstadoDeAnimo.fechaCreacion.toLocal().year ==
+              yearSelected,
         )
         .toList();
 
@@ -194,8 +195,9 @@ class _HistogramaAnsiedadEmocional extends StatelessWidget {
 
     for (TestBreveEstadoDeAnimo testBreveEstadoDeAnimo
         in testsBreveEstadoDeAnimo) {
-      int month = testBreveEstadoDeAnimo.fechaCreacion.month - 1;
-      int day = testBreveEstadoDeAnimo.fechaCreacion.day - 1;
+      final localDate = testBreveEstadoDeAnimo.fechaCreacion.toLocal();
+      int month = localDate.month - 1;
+      int day = localDate.day - 1;
       scoreAnsiedadEmocionalPorAnio[month][day] = testBreveEstadoDeAnimo
           .sentimientosAnsiedadEmocionalTestBreve
           .totalScore;
@@ -229,8 +231,9 @@ class _HistogramaAnsiedadFisica extends StatelessWidget {
 
     for (TestBreveEstadoDeAnimo testBreveEstadoDeAnimo
         in testsBreveEstadoDeAnimo) {
-      int month = testBreveEstadoDeAnimo.fechaCreacion.month - 1;
-      int day = testBreveEstadoDeAnimo.fechaCreacion.day - 1;
+      final localDate = testBreveEstadoDeAnimo.fechaCreacion.toLocal();
+      int month = localDate.month - 1;
+      int day = localDate.day - 1;
       scoreAnsiedadFisicaPorAnio[month][day] =
           testBreveEstadoDeAnimo.sentimientosAnsiedadFisicaTestBreve.totalScore;
     }
@@ -263,8 +266,9 @@ class _HistogramaDepresion extends StatelessWidget {
 
     for (TestBreveEstadoDeAnimo testBreveEstadoDeAnimo
         in testsBreveEstadoDeAnimo) {
-      int month = testBreveEstadoDeAnimo.fechaCreacion.month - 1;
-      int day = testBreveEstadoDeAnimo.fechaCreacion.day - 1;
+      final localDate = testBreveEstadoDeAnimo.fechaCreacion.toLocal();
+      int month = localDate.month - 1;
+      int day = localDate.day - 1;
       scoreDepresionPorAnio[month][day] =
           testBreveEstadoDeAnimo.depresionTestBreve.totalScore;
     }
@@ -297,8 +301,9 @@ class _HistogramaImpulsosSuicidas extends StatelessWidget {
 
     for (TestBreveEstadoDeAnimo testBreveEstadoDeAnimo
         in testsBreveEstadoDeAnimo) {
-      int month = testBreveEstadoDeAnimo.fechaCreacion.month - 1;
-      int day = testBreveEstadoDeAnimo.fechaCreacion.day - 1;
+      final localDate = testBreveEstadoDeAnimo.fechaCreacion.toLocal();
+      int month = localDate.month - 1;
+      int day = localDate.day - 1;
       scoreImpulsosSuicidasPorAnio[month][day] =
           testBreveEstadoDeAnimo.impulsoSuicidaTestBreve.totalScore;
     }

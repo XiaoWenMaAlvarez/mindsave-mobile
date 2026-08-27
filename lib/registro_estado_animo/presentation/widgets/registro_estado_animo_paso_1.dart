@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 
 class RegistroEstadoAnimoPaso1 extends StatefulWidget {
@@ -107,8 +107,24 @@ class DatePicker extends StatefulWidget {
 }
 
 class _DatePickerState extends State<DatePicker> {
-  final _fechaController = TextEditingController();
-  DateTime? selectedDate;
+  late final TextEditingController _fechaController;
+
+  @override
+  void initState() {
+    super.initState();
+    _fechaController = TextEditingController(
+      text: _formattedDate(widget.registroEstadoAnimo.fecha),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant DatePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final formatted = _formattedDate(widget.registroEstadoAnimo.fecha);
+    if (_fechaController.text != formatted) {
+      _fechaController.text = formatted;
+    }
+  }
 
   @override
   void dispose() {
@@ -116,29 +132,31 @@ class _DatePickerState extends State<DatePicker> {
     super.dispose();
   }
 
+  String _formattedDate(DateTime date) =>
+      '${date.day}/${date.month}/${date.year}';
+
   Future<void> _selectDate() async {
+    final now = DateTime.now();
+    final initialDate = widget.registroEstadoAnimo.fecha.isAfter(now)
+        ? now
+        : widget.registroEstadoAnimo.fecha;
+
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: widget.registroEstadoAnimo.fecha,
+      initialDate: initialDate,
       firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
+      lastDate: now,
     );
 
     if (pickedDate == null) return;
     setState(() {
-      selectedDate = pickedDate;
-      _fechaController.text =
-          '${pickedDate.day}/${pickedDate.month}/${pickedDate.year}';
+      _fechaController.text = _formattedDate(pickedDate);
       widget.registroEstadoAnimo.fecha = pickedDate;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    selectedDate = widget.registroEstadoAnimo.fecha;
-    _fechaController.text =
-        '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}';
-
     return TextFormField(
       controller: _fechaController,
       readOnly: true,

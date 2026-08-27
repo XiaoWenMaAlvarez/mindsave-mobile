@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 
 class PensamientosNegativosGroup extends StatefulWidget {
@@ -39,6 +39,7 @@ class _PensamientosNegativosGroupState
             children: [
               for (int i = 0; i < widget.pensamientos.length; i++) ...[
                 Container(
+                  key: ObjectKey(widget.pensamientos[i]),
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerLow,
@@ -65,6 +66,7 @@ class _PensamientosNegativosGroupState
                       ),
                       const SizedBox(height: 6),
                       TextFormField(
+                        key: ValueKey(widget.pensamientos[i]),
                         initialValue:
                             widget.pensamientos[i].pensamientoNegativo,
                         minLines: 2,

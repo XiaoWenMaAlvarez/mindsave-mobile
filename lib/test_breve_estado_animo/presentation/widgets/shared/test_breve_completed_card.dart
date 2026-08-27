@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:mindsave/shared/presentation/widgets/mindsave_ui.dart';
 import 'package:mindsave/test_breve_estado_animo/domain/entities/entities.dart';
 
@@ -213,7 +213,8 @@ class _ScoreProgress extends StatelessWidget {
 }
 
 String _formatTime(DateTime date) {
-  final hour = (date.hour - 4).toString().padLeft(2, '0');
-  final minute = date.minute.toString().padLeft(2, '0');
+  final local = date.toLocal();
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
 }

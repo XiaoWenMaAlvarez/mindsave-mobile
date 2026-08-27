@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/config/helpers/date_helper.dart';
@@ -48,16 +48,9 @@ class _RegistrosScreenState extends ConsumerState<RegistrosScreen> {
       bottomNavigationBar: const MindsaveBottomNavigation(currentIndex: 1),
       body: RefreshIndicator(
         onRefresh: () async {
-          if (!state.isLastPendientePage) {
-            await ref
-                .read(registroEstadoDeAnimoProvider.notifier)
-                .loadNextPendientesPage();
-          }
-          if (!state.isLastCompletoPage) {
-            await ref
-                .read(registroEstadoDeAnimoProvider.notifier)
-                .loadNextCompletosPage();
-          }
+          await ref
+              .read(registroEstadoDeAnimoProvider.notifier)
+              .refreshRegistros();
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),

@@ -122,22 +122,22 @@ class _InitialScreenState extends ConsumerState<_InitialScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<String?>(chatListProvider.select((state) => state.error), (
+      previous,
+      next,
+    ) {
+      if (next == null || next.isEmpty) return;
+      _showNewChatDialog(context, next);
+      ref.read(chatListProvider.notifier).clearError();
+    });
+
     final chatListState = ref.watch(chatListProvider);
     final chatList = chatListState.chats;
     final isInitialLoading = chatListState.isInitialLoading;
     final isLoading = chatListState.isLoading;
 
-    if (isInitialLoading || isLoading) {
+    if (isInitialLoading && chatList.isEmpty) {
       return const MindsaveLoadingView(message: 'Cargando tus conversaciones…');
-    }
-
-    final error = chatListState.error;
-
-    if (error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showNewChatDialog(context, error);
-        ref.read(chatListProvider.notifier).clearError();
-      });
     }
 
     if (chatList.isEmpty) {
@@ -163,6 +163,10 @@ class _InitialScreenState extends ConsumerState<_InitialScreen> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (isLoading) ...[
+              const SizedBox(height: 16),
+              const LinearProgressIndicator(),
+            ],
           ],
         ),
       );
@@ -170,7 +174,12 @@ class _InitialScreenState extends ConsumerState<_InitialScreen> {
 
     return Column(
       children: [
-        SizedBox(height: 10),
+        if (isLoading) ...[
+          const LinearProgressIndicator(),
+          const SizedBox(height: 10),
+        ] else ...[
+          const SizedBox(height: 10),
+        ],
         ...chatList.map(
           (chat) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -192,7 +201,9 @@ class _ListTileChat extends ConsumerWidget {
     MensajeChatIa? lastMessage;
 
     if (chat.mensajes.isNotEmpty) {
-      lastMessage = chat.mensajes.first;
+      lastMessage = chat.mensajes.reduce(
+        (a, b) => a.createdAt.isAfter(b.createdAt) ? a : b,
+      );
     }
 
     final theme = Theme.of(context);
@@ -226,7 +237,10 @@ class _ListTileChat extends ConsumerWidget {
           maxLines: 2,
         ),
         trailing: const Icon(Icons.arrow_forward_rounded),
-        onTap: () => context.push('/externalizacionVoces/chat/${chat.id}'),
+        onTap: () async {
+          await context.push('/externalizacionVoces/chat/${chat.id}');
+          ref.read(chatListProvider.notifier).loadPreviousChats();
+        },
         onLongPress: () {
           showDialog(
             context: context,

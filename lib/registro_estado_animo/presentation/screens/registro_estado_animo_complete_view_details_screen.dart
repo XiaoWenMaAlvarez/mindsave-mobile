@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/config/helpers/date_helper.dart';
@@ -54,7 +54,9 @@ class _RegistroEstadoAnimoCompleteViewDetailsScreenState
       endDrawer: SideMenu(scaffoldKey: _scaffoldKey),
       bottomNavigationBar: const CustomBottomNavigation(currentIndex: 1),
       body: record == null
-          ? const MindsaveLoadingView(message: 'Cargando tu registro…')
+          ? (state.isLoading
+                ? const MindsaveLoadingView(message: 'Cargando tu registro…')
+                : const CbtRecordNotFoundView())
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
               children: [

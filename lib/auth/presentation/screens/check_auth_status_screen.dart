@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,6 +55,7 @@ class _CheckAuthStatusScreenState extends ConsumerState<CheckAuthStatusScreen> {
                     child: _OfflineContent(
                       isRetrying: _isRetrying,
                       onRetry: _retryConnection,
+                      onLogout: () => ref.read(authProvider.notifier).logout(),
                     ),
                   ),
                 ),
@@ -77,10 +78,15 @@ class _CheckAuthStatusScreenState extends ConsumerState<CheckAuthStatusScreen> {
 }
 
 class _OfflineContent extends StatelessWidget {
-  const _OfflineContent({required this.isRetrying, required this.onRetry});
+  const _OfflineContent({
+    required this.isRetrying,
+    required this.onRetry,
+    required this.onLogout,
+  });
 
   final bool isRetrying;
   final VoidCallback onRetry;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -141,6 +147,11 @@ class _OfflineContent extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: isRetrying ? null : onLogout,
+            child: const Text('Iniciar sesión con otra cuenta'),
           ),
         ],
       ),

@@ -12,7 +12,7 @@ El objetivo es que el documento sirva como fuente para:
 - preparar una descripción de arquitectura;
 - separar el comportamiento implementado de las intenciones no terminadas o de los componentes alternativos que no están conectados al flujo de ejecución.
 
-La descripción corresponde al estado observado del repositorio el **25 de agosto de 2026**. No se ha supuesto comportamiento del backend más allá de los contratos que consume el cliente Flutter.
+La descripción corresponde al estado observado del repositorio el **26 de agosto de 2026**. No se ha supuesto comportamiento del backend más allá de los contratos que consume el cliente Flutter.
 
 ### 1.1 Convenciones de lectura
 
@@ -34,7 +34,7 @@ La descripción corresponde al estado observado del repositorio el **25 de agost
 | Canal Flutter registrado | `stable` |
 | Backend | API REST externa definida por `API_URL_BASE` |
 | Persistencia principal de información clínica/funcional | Backend remoto autenticado |
-| Persistencia local activa | Token de sesión y preferencia de modo oscuro en `SharedPreferences` |
+| Persistencia local activa | Token de sesión, preferencia de modo oscuro (`isDarkMode`) y estado de ánimo rápido (`quickMood`) en `SharedPreferences` |
 | Administración de estado | Riverpod con `Provider` y `NotifierProvider` |
 | Navegación | `go_router` con redirección basada en autenticación |
 
@@ -71,8 +71,8 @@ No existe un rol administrativo, profesional clínico o cuidador en el cliente. 
 | Autenticación | Restablecimiento de contraseña | Solicitud implementada; el cambio final ocurre fuera de la app |
 | Autenticación | Recuperación automática de sesión | Implementado mediante token local y validación remota |
 | Autenticación | Cierre de sesión | Implementado; puede iniciarse manualmente o automáticamente ante HTTP 401 y elimina el token local |
-| Inicio | Saludo personalizado, fecha y accesos rápidos | Implementado |
-| Inicio | Selector rápido “¿Cómo te sientes hoy?” | Solo interfaz local; no se persiste ni se envía al backend |
+| Inicio | Saludo dinámico según franja horaria, fecha y accesos rápidos | Implementado |
+| Inicio | Selector rápido “¿Cómo te sientes hoy?” | Interfaz y persistencia local activa en `SharedPreferences` (no se envía al backend) |
 | Preferencias | Modo oscuro | Implementado y persistido localmente |
 | Test breve | Crear una evaluación diaria de 22 ítems | Implementado |
 | Test breve | Mostrar resultados y niveles por dimensión | Implementado |
@@ -267,7 +267,7 @@ La caché es solo de memoria: no constituye almacenamiento offline persistente.
 |---|---|
 | HTTP 400 | Credenciales incorrectas |
 | HTTP 401 | Cuenta aún no activada; se solicita revisar el correo |
-| `connectionTimeout` | Conexión perdida |
+| Fallo de conexión (`connectionTimeout`, `sendTimeout`, `receiveTimeout`, `connectionError` o caída de red) | Conexión perdida |
 | Otro error | Error al iniciar sesión |
 
 ### 6.3 Creación de cuenta
@@ -297,12 +297,12 @@ Puede iniciarse manualmente desde el menú lateral o automáticamente cuando el 
 `HomeScreen` muestra:
 
 - fecha larga en español calculada localmente;
-- saludo “Buenos días” más el primer nombre del usuario autenticado;
-- selector visual de cinco estados: Muy mal, Mal, Regular, Bien y Muy bien;
+- saludo dinámico por franja horaria (“Buenos días”, “Buenas tardes” o “Buenas noches”) más el primer nombre del usuario autenticado;
+- selector visual de cinco estados: Muy mal, Mal, Regular, Bien y Muy bien (persistido localmente mediante `LocalStorageService` bajo la clave `'quickMood'`);
 - cantidad de registros CBT pendientes actualmente cargados en memoria;
 - accesos a seguimiento anual, nuevo test y resultados del día.
 
-El selector rápido de ánimo inicia en “Bien” (`_selectedMood = 3`). Al tocar otra opción solo cambia estado local del widget y muestra “Estado de ánimo registrado”. **No se llama a un provider, repositorio, almacenamiento local ni endpoint**, por lo que el dato desaparece al reconstruir la pantalla.
+El selector rápido de ánimo recupera el valor guardado en `SharedPreferences` (por defecto 3, “Bien”). Al cambiar de opción, persiste el valor localmente y muestra un SnackBar informativo; el dato se conserva entre ejecuciones locales pero no se envía al backend.
 
 La cantidad de registros pendientes se obtiene del conjunto paginado ya cargado, no de un total independiente retornado por el backend.
 
@@ -444,13 +444,13 @@ La restricción “una evaluación por día” se refleja en la consulta previa 
 
 Cuando existe una evaluación del día, la pantalla de creación cambia por una tarjeta resumen con:
 
-- hora y puntuación total acumulada;
+- hora (formateada en hora local con `toLocal()`) y puntuación total acumulada;
 - barras de las cuatro dimensiones;
 - acciones Ver resultados completos, Editar y Eliminar.
 
 **Editar:** se clona la entidad mediante `toJson/fromJson`, se habilita el mismo formulario y se envía `PUT /api/test-breve-estado-de-animo/`.
 
-**Eliminar:** solicita confirmación, limpia primero el estado local y luego ejecuta `DELETE /api/test-breve-estado-de-animo/año/mes/día` para la fecha actual.
+**Eliminar:** solicita confirmación, limpia el estado local en los providers y ejecuta `DELETE /api/test-breve-estado-de-animo/año/mes/día` para la fecha actual.
 
 ### 8.7 Resultados del día
 
@@ -708,8 +708,7 @@ Al leer mensajes, `createdAt` se convierte a hora local. Para la UI, un mensaje 
 ### 10.2 Listar conversaciones
 
 Al entrar en `/externalizacionVoces/0`, `chatListProvider` ejecuta `GET /api/chat-ia/get-chats-by-user`. La respuesta esperada es `{results: [chat...]}`.
-
-Cada tarjeta presenta título y un mensaje usado como vista previa. El código toma `chat.mensajes.first`; no ordena los chats ni los mensajes en esta vista y contiene un TODO para ordenar por mensaje más reciente. El orden real depende de la respuesta del backend.
+Cada tarjeta presenta título y un mensaje usado como vista previa. Al regresar de la pantalla de chat (`ExternalizacionVocesChatScreen`), la lista invoca `loadPreviousChats()` para mantener las conversaciones sincronizadas con el último mensaje y fecha. El orden de las tarjetas depende de la respuesta del backend.
 
 ### 10.3 Crear conversación
 
@@ -836,7 +835,7 @@ Todas las rutas de test, registro y chat usan Bearer token y el cliente con cach
 | DELETE | `/api/chat-ia/delete-chat/:idChat` | — | Elimina chat |
 | POST | `/api/chat-ia/send-message-to-chat/:idChat` | Multipart: `prompt`, `chatId`, `files*` | Stream de bytes UTF-8 |
 
-No se configuran tiempos máximos explícitos en `BaseOptions`; el manejo de `connectionTimeout` existe en autenticación, pero depende de que Dio o la plataforma produzcan ese tipo de error.
+No se configuran tiempos máximos explícitos en `BaseOptions`; en autenticación, `AuthDatasourceImpl` detecta fallos de conexión (`connectionTimeout`, `sendTimeout`, `receiveTimeout`, `connectionError` y caídas de red) traduciéndolos a `ConnectionTimeout` o `"Conexión perdida"`.
 
 ## 13. Persistencia y ciclo de vida de datos
 
@@ -846,8 +845,9 @@ No se configuran tiempos máximos explícitos en `BaseOptions`; el manejo de `co
 |---|---|---|---|
 | `token` | String | Token Bearer de sesión | Cierre de sesión o token inválido |
 | `isDarkMode` | bool | Preferencia de tema | No existe acción de eliminación; se sobrescribe |
+| `quickMood` | int | Selección rápida de estado de ánimo (0–4) | No existe acción de eliminación; se sobrescribe |
 
-`LocalStorageServiceImpl` solo soporta String y bool. Otros tipos lanzan `UnimplementedError`.
+`LocalStorageServiceImpl` soporta String, bool, int y double mediante `SharedPreferences`. Otros tipos lanzan `UnimplementedError`.
 
 ### 13.2 Datasources locales no conectados
 
@@ -902,20 +902,19 @@ Esta sección describe comportamiento observable y no debe transformarse en requ
 
 ### 16.1 Funciones parciales
 
-1. El selector rápido de ánimo del inicio no guarda datos.
+1. El selector rápido de ánimo del inicio persiste su valor localmente en `SharedPreferences`, pero no se sincroniza con el backend ni forma parte del historial clínico.
 2. Los chips de categorías de Módulos no filtran.
 3. No existe gestión de perfil, cambio de contraseña autenticado ni eliminación de cuenta.
 
 ### 16.2 Tiempo y cambio de día
 
-1. `TestBreveCompletedCard._formatTime` resta cuatro horas manualmente y no normaliza cambio de fecha. Esto puede mostrar horas negativas y produjo una divergencia con la prueba existente.
-2. El timer de medianoche llama `setTestBreveRealizadoHoy`, pero este método retorna inmediatamente si el estado ya contiene un test. Si la app permanece abierta al cambiar de día, puede seguir considerando el test anterior como “de hoy”.
-3. Otras partes usan `DateTime.now()` local y los mensajes de chat convierten fechas del backend con `toLocal`; no existe una política horaria centralizada.
+1. `TestBreveCompletedCard._formatTime` formatea con `toLocal()`. `TestBreveEstadoDeAnimoNotifier` y `DateHelper` normalizan consistentemente las fechas con `toLocal()` para alinearse con la zona horaria del usuario.
+2. El timer de medianoche invoca `setTestBreveRealizadoHoy`, el cual verifica si la evaluación en memoria corresponde a un día anterior para refrescar transparentemente el estado al cambiar de día.
 
 ### 16.3 Reglas y modelos
 
-1. Los DTO `*Response` del test aceptan por aserción 0–5, mientras las entidades y la UI aceptan 0–4.
-2. `SentimientosAnsiedadFisicaTestBreveResponse.result` repite `<= 30` para severa y extrema, por lo que su rama extrema es inalcanzable; el flujo principal usa el resultado de la entidad de dominio, que sí maneja hasta 40.
+1. Los DTO `*Response` del test breve validan mediante aserciones valores entre 0 y 4, coincidentes con las entidades y la interfaz de usuario.
+2. `SentimientosAnsiedadFisicaTestBreveResponse.result` evalúa correctamente síntomas severos (21–30) y extremos (31–40).
 3. El progreso CBT confunde “no se seleccionó ninguna distorsión” con “paso 4 no realizado”.
 4. “No guardar” en pasos CBT no revierte mutaciones en memoria.
 5. La reducción emocional agregada se limita a cero ante empeoramiento, ocultando un valor negativo agregado.
@@ -928,16 +927,15 @@ Esta sección describe comportamiento observable y no debe transformarse en requ
 3. El caché es volátil y no permite operación offline completa.
 4. Varios errores CBT se silencian o se convierten en mensajes genéricos.
 5. La creación de chat presenta cualquier fallo como título duplicado.
-6. La lista de chats no se ordena en el cliente y usa el primer mensaje como vista previa.
-7. El saludo automático `Hola` de un chat nuevo no se agrega al objeto local; aparece después de recargar el historial.
-8. Una respuesta HTTP 401 finaliza la sesión, pero no existe renovación automática del token ni reintento transparente de la solicitud original.
+6. El saludo automático `Hola` de un chat nuevo no se agrega al objeto local; aparece después de recargar el historial.
+7. Una respuesta HTTP 401 finaliza la sesión, pero no existe renovación automática del token ni reintento transparente de la solicitud original.
 
 ### 16.5 Seguridad y despliegue móvil
 
-1. El token se guarda sin `flutter_secure_storage` ni mecanismo equivalente.
-2. El manifest Android principal no declara `INTERNET`; la declaración existe solo en `debug` y `profile`, por lo que una compilación release puede carecer de permiso de red.
-3. La configuración release Android firma con claves debug; el identificador está configurado como `applicationId = com.mindsave.app`.
-4. `Info.plist` no declara descripciones de uso de galería/fotos requeridas habitualmente por `image_picker` en iOS.
+1. El token se guarda en `SharedPreferences` sin `flutter_secure_storage` ni mecanismo equivalente.
+2. El manifest Android principal (`android/app/src/main/AndroidManifest.xml`) declara `INTERNET`, garantizando conectividad en compilaciones de release.
+3. `Info.plist` declara `NSPhotoLibraryUsageDescription` y `NSCameraUsageDescription` requeridas por `image_picker` en iOS.
+4. La configuración release Android firma con claves debug; el identificador está configurado como `applicationId = com.mindsave.app`.
 5. Los nombres visibles de Android/iOS están configurados como “Mindsave”.
 6. No se observa certificate pinning, cifrado de payload a nivel de aplicación ni sanitización clínica específica.
 7. `.env` se declara como asset de Flutter. Es apropiado para una URL base, pero cualquier secreto añadido allí quedaría incluido en el paquete distribuido.
@@ -966,6 +964,7 @@ La suite cubre:
 - normalización, aislamiento, vigencia, fallback e invalidación de caché;
 - recreación del cliente por cambio de token/usuario/sesión y cierre automático ante HTTP 401;
 - validación y adaptabilidad de pantallas de autenticación;
+- detección de fallos de red y connectionError en la capa de autenticación;
 - reenvío del correo de activación, incluyendo endpoint y body enviados;
 - reintento de conexión;
 - providers migrados a Riverpod `Notifier`;
@@ -974,13 +973,12 @@ La suite cubre:
 - exportaciones PDF/XLSX de CBT y test anual;
 - navegación inferior y vistas de carga;
 - detalle anual y modal diario en tamaño Pixel 9;
-- consulta autónoma y presentación del resultado de hoy al abrir la vista diaria.
+- consulta autónoma y presentación del resultado de hoy al abrir la vista diaria;
+- consistencia horaria local en la tarjeta de resumen del test completado.
 
-Resultado de `flutter test`: **36 pruebas exitosas y 1 fallida**.
+Resultado de `flutter test`: **49 pruebas exitosas y 0 fallidas**.
 
-La falla está en `test_breve_completed_card_test.dart`: la prueba crea una evaluación a las 09:14 y espera “Respondido a las 09:14”, mientras la implementación resta cuatro horas y genera una hora diferente. Esta falla confirma la inconsistencia horaria descrita anteriormente; no es un fallo aleatorio de infraestructura.
-
-Durante las pruebas de PDF también se muestran advertencias por falta de soporte Unicode de Helvetica; los archivos se generan y superan las validaciones estructurales existentes.
+Durante las pruebas de PDF también se muestran advertencias informativas del paquete `pdf` por falta de soporte Unicode de Helvetica; los archivos se generan y superan las validaciones estructurales existentes.
 
 ## 18. Trazabilidad de funcionalidades a archivos
 

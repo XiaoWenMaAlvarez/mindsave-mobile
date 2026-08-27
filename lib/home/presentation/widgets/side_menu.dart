@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
@@ -32,7 +32,7 @@ class SideMenuState extends ConsumerState<SideMenu> {
         final selectedItem = appMenuItems[value];
         widget.scaffoldKey.currentState?.closeEndDrawer();
         ref.read(selectedMenuItemProvider.notifier).select(value);
-        context.push(selectedItem.link);
+        context.go(selectedItem.link);
       },
       children: [
         Padding(padding: EdgeInsets.fromLTRB(28, hasNotch ? 0 : 0, 16, 10)),
@@ -168,7 +168,10 @@ class SideMenuState extends ConsumerState<SideMenu> {
         ListTile(
           leading: const Icon(Icons.logout_outlined),
           title: const Text("Cerrar sesión"),
-          onTap: ref.read(authProvider.notifier).logout,
+          onTap: () {
+            widget.scaffoldKey.currentState?.closeEndDrawer();
+            ref.read(authProvider.notifier).logout();
+          },
           horizontalTitleGap: 5,
         ),
       ],

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/home/presentation/widgets/widgets.dart';
@@ -169,15 +169,23 @@ class _RegistroEstadoAnimoCreateScreenState
       return;
     }
 
-    await ref
-        .read(nuevoRegistroEstadoDeAnimoProvider.notifier)
-        .guardarRegistroEstadoDeAnimo();
-    if (!mounted) return;
-    _showSnackBar(
-      context,
-      'Registro guardado. Continúa con las distorsiones cognitivas.',
-    );
-    context.push('/registroEstadoAnimo/3/${registro.id}');
+    try {
+      await ref
+          .read(nuevoRegistroEstadoDeAnimoProvider.notifier)
+          .guardarRegistroEstadoDeAnimo();
+      if (!mounted) return;
+      _showSnackBar(
+        context,
+        'Registro guardado. Continúa con las distorsiones cognitivas.',
+      );
+      context.push('/registroEstadoAnimo/3/${registro.id}');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(
+        context,
+        'No se pudo guardar el registro. Comprueba tu conexión e inténtalo de nuevo.',
+      );
+    }
   }
 }
 

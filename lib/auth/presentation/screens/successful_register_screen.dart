@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
@@ -109,7 +109,7 @@ class _SuccessfulRegisterScreenState
           const SizedBox(height: 24),
           AuthSubmitButton(
             label: 'Volver al inicio de sesión',
-            onPressed: () => context.push('/login'),
+            onPressed: () => context.go('/login'),
           ),
         ],
       ),

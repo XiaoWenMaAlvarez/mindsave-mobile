@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
@@ -23,6 +23,7 @@ class _RegistroEstadoAnimoPendingViewStep6ScreenState
     extends ConsumerState<RegistroEstadoAnimoPendingViewStep6Screen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKeys = <GlobalKey<FormState>>[];
+  RegistroEstadoAnimo? _originalSnapshot;
 
   @override
   void initState() {
@@ -53,6 +54,9 @@ class _RegistroEstadoAnimoPendingViewStep6ScreenState
         ? const <CbtEmotionGroupData>[]
         : cbtEmotionGroups(record).where((data) => data.hasSelection).toList();
     _ensureFormKeys(groups.length);
+    if (record != null) {
+      _originalSnapshot ??= RegistroEstadoAnimo.fromJson(record.toJson());
+    }
 
     return CbtFlowScaffold(
       scaffoldKey: _scaffoldKey,
@@ -61,10 +65,12 @@ class _RegistroEstadoAnimoPendingViewStep6ScreenState
       description:
           'Re-evalúa la intensidad de tus emociones después del ejercicio.',
       body: record == null
-          ? const MindsaveLoadingView(
-              compact: true,
-              message: 'Cargando tu registro…',
-            )
+          ? (state.isLoading
+                ? const MindsaveLoadingView(
+                    compact: true,
+                    message: 'Cargando tu registro…',
+                  )
+                : const CbtRecordNotFoundView())
           : _StepSixContent(
               groups: groups,
               formKeys: _formKeys,
@@ -85,6 +91,13 @@ class _RegistroEstadoAnimoPendingViewStep6ScreenState
       onSave: () => ref
           .read(registroEstadoDeAnimoProvider.notifier)
           .editarRegistroEstadoDeAnimo(record),
+      onDiscard: () {
+        if (_originalSnapshot != null) {
+          ref
+              .read(registroEstadoDeAnimoProvider.notifier)
+              .restaurarRegistroEstadoDeAnimo(_originalSnapshot!);
+        }
+      },
     );
     if (shouldLeave && mounted) {
       context.push('/registroEstadoAnimo/4/${record.id}');

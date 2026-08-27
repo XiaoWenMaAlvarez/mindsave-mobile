@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:pdf/pdf.dart';
@@ -24,7 +24,7 @@ class CbtRecordExporter {
     final document = pw.Document(
       title: 'Registro CBT ${_formatDate(record.fecha)}',
       author: 'MindSave',
-      subject: 'Registro individual de estado de animo',
+      subject: 'Registro individual de estado de ánimo',
     );
     final accent = PdfColor.fromHex('#006D6F');
     final border = PdfColor.fromHex('#D5DEDA');
@@ -43,7 +43,7 @@ class CbtRecordExporter {
               style: pw.TextStyle(fontSize: 8, color: muted),
             ),
             pw.Text(
-              'Pagina ${context.pageNumber} de ${context.pagesCount}',
+              'Página ${context.pageNumber} de ${context.pagesCount}',
               style: pw.TextStyle(fontSize: 8, color: muted),
             ),
           ],
@@ -63,14 +63,14 @@ class CbtRecordExporter {
             style: pw.TextStyle(fontSize: 10.5, color: muted),
           ),
           pw.SizedBox(height: 22),
-          _pdfSectionTitle('Situacion', accent),
+          _pdfSectionTitle('Situación', accent),
           pw.SizedBox(height: 7),
           pw.Text(
-            _ascii(_singleLine(record.sucesoTrastornador)),
+            _sanitizePdfText(_singleLine(record.sucesoTrastornador)),
             style: const pw.TextStyle(fontSize: 10.5, lineSpacing: 3),
           ),
           pw.SizedBox(height: 22),
-          _pdfSectionTitle('Evolucion emocional', accent),
+          _pdfSectionTitle('Evolución emocional', accent),
           pw.SizedBox(height: 9),
           if (emotionRows.isEmpty)
             pw.Text(
@@ -84,14 +84,14 @@ class CbtRecordExporter {
                 'Grupo',
                 'Emociones',
                 'Antes',
-                'Despues',
+                'Después',
                 'Cambio',
               ],
               data: [
                 for (final row in emotionRows)
                   [
-                    _ascii(row.title),
-                    _ascii(row.emotions),
+                    _sanitizePdfText(row.title),
+                    _sanitizePdfText(row.emotions),
                     '${row.before}%',
                     '${row.after}%',
                     '${row.before - row.after} pts',
@@ -118,7 +118,7 @@ class CbtRecordExporter {
               },
             ),
           pw.SizedBox(height: 22),
-          _pdfSectionTitle('Reestructuracion cognitiva', accent),
+          _pdfSectionTitle('Reestructuración cognitiva', accent),
           pw.SizedBox(height: 5),
           if (record.listaPensamientos.isEmpty)
             pw.Text(
@@ -141,8 +141,8 @@ class CbtRecordExporter {
               ),
               pw.SizedBox(height: 6),
               _pdfField(
-                'Pensamiento automatico',
-                _ascii(
+                'Pensamiento automático',
+                _sanitizePdfText(
                   _singleLine(
                     record.listaPensamientos[index].pensamientoNegativo,
                   ),
@@ -152,17 +152,17 @@ class CbtRecordExporter {
               _pdfField(
                 'Creencia',
                 '${record.listaPensamientos[index].porcentajeCreenciaAntes}% antes - '
-                    '${record.listaPensamientos[index].porcentajeCreenciaDespues ?? 0}% despues',
+                    '${record.listaPensamientos[index].porcentajeCreenciaDespues ?? 0}% después',
                 muted,
               ),
               _pdfField(
                 'Distorsiones',
-                _ascii(_distortions(record.listaPensamientos[index])),
+                _sanitizePdfText(_distortions(record.listaPensamientos[index])),
                 muted,
               ),
               _pdfField(
                 'Pensamiento alternativo',
-                _ascii(
+                _sanitizePdfText(
                   _singleLine(
                     record.listaPensamientos[index].pensamientoPositivo,
                   ),
@@ -179,7 +179,7 @@ class CbtRecordExporter {
             ],
           pw.SizedBox(height: 14),
           pw.Text(
-            'Este documento es un resumen personal y no reemplaza una evaluacion profesional.',
+            'Este documento es un resumen personal y no reemplaza una evaluación profesional.',
             style: pw.TextStyle(fontSize: 8.5, color: muted),
           ),
         ],
@@ -349,28 +349,22 @@ class CbtRecordExporter {
   static String _singleLine(String? value) =>
       value?.trim().replaceAll(RegExp(r'\s+'), ' ') ?? '';
 
-  static String _ascii(String value) {
-    const replacements = {
-      'á': 'a',
-      'é': 'e',
-      'í': 'i',
-      'ó': 'o',
-      'ú': 'u',
-      'ü': 'u',
-      'ñ': 'n',
-      'Á': 'A',
-      'É': 'E',
-      'Í': 'I',
-      'Ó': 'O',
-      'Ú': 'U',
-      'Ü': 'U',
-      'Ñ': 'N',
+  static String _sanitizePdfText(String value) {
+    const typography = {
+      '“': '"',
+      '”': '"',
+      '‘': "'",
+      '’': "'",
+      '–': '-',
+      '—': '-',
+      '…': '...',
+      '•': '-',
     };
     var normalized = value;
-    for (final entry in replacements.entries) {
+    for (final entry in typography.entries) {
       normalized = normalized.replaceAll(entry.key, entry.value);
     }
-    return normalized.replaceAll(RegExp(r'[^\x20-\x7E]'), '?');
+    return normalized.replaceAll(RegExp(r'[^\x20-\x7E\xA0-\xFF]'), '');
   }
 
   static String _worksheet(List<List<Object>> rows) {

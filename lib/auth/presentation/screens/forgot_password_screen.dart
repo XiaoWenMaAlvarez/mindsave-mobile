@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
@@ -76,7 +76,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       subtitle:
           'Ingresa tu correo y te enviaremos las instrucciones para recuperar el acceso.',
       footer: TextButton.icon(
-        onPressed: () => context.push('/login'),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/login');
+          }
+        },
         icon: const Icon(Icons.arrow_back_rounded),
         label: const Text('Volver al login'),
       ),

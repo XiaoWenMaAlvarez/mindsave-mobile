@@ -1,4 +1,5 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mindsave/externalizacion_de_voces/domain/entities/entities.dart';
 import 'package:mindsave/externalizacion_de_voces/domain/repositories/externalizacion_de_voces_repository.dart';
 import 'package:mindsave/externalizacion_de_voces/presentation/providers/chat_ia_repository_provider.dart';
@@ -44,15 +45,83 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
 
   void clearError() => state = state.copyWith(error: null);
 
+  List<ChatHistoryChatIa> _sortChats(List<ChatHistoryChatIa> list) {
+    final copy = [...list];
+    copy.sort((a, b) {
+      final aDate = a.mensajes.isNotEmpty
+          ? a.mensajes
+                .map((m) => m.createdAt)
+                .reduce((x, y) => x.isAfter(y) ? x : y)
+          : DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.mensajes.isNotEmpty
+          ? b.mensajes
+                .map((m) => m.createdAt)
+                .reduce((x, y) => x.isAfter(y) ? x : y)
+          : DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    });
+    return copy;
+  }
+
   Future<void> addChat({required String title}) async {
     if (state.isLoading) return;
     state = state.copyWith(isLoading: true, error: null);
     try {
       final newChat = await repository.createNewChat(title);
-      await for (final _ in repository.sendMessageToChat(newChat.id, 'Hola')) {}
-      state = state.copyWith(chats: [newChat, ...state.chats]);
-    } catch (_) {
-      state = state.copyWith(error: 'Nombre del chat ya usado');
+      final now = DateTime.now();
+      newChat.mensajes = [
+        MensajeChatIa(
+          id: '${newChat.id}-user-greeting',
+          text: 'Hola',
+          createdAt: now,
+          role: 'user',
+          archivos: const [],
+        ),
+      ];
+      state = state.copyWith(chats: _sortChats([newChat, ...state.chats]));
+
+      try {
+        String greetingResponse = '';
+        await for (final chunk in repository.sendMessageToChat(
+          newChat.id,
+          'Hola',
+        )) {
+          greetingResponse = chunk;
+        }
+        if (greetingResponse.isNotEmpty) {
+          newChat.mensajes = [
+            ...newChat.mensajes,
+            MensajeChatIa(
+              id: '${newChat.id}-assistant-greeting',
+              text: greetingResponse,
+              createdAt: DateTime.now().add(const Duration(milliseconds: 100)),
+              role: 'assistant',
+              archivos: const [],
+            ),
+          ];
+          state = state.copyWith(chats: _sortChats([...state.chats]));
+        }
+      } catch (_) {
+        // Si el saludo inicial de la IA falla, el chat ya fue creado y conservado.
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 400 || e.response?.statusCode == 409) {
+          state = state.copyWith(error: 'Nombre del chat ya usado');
+          return;
+        }
+      } else if (e is StateError && e.message.contains('duplicate')) {
+        state = state.copyWith(error: 'Nombre del chat ya usado');
+        return;
+      } else if (e.toString().contains('duplicate') ||
+          e.toString().contains('409') ||
+          e.toString().contains('ya usado')) {
+        state = state.copyWith(error: 'Nombre del chat ya usado');
+        return;
+      }
+      state = state.copyWith(
+        error: 'No se pudo crear el chat. Inténtalo nuevamente.',
+      );
     } finally {
       state = state.copyWith(isLoading: false);
     }
@@ -78,7 +147,7 @@ class ChatsListNotifier extends Notifier<ChatsListState> {
     state = state.copyWith(isInitialLoading: true, error: null);
     try {
       final chats = await repository.getChatsByUser();
-      state = state.copyWith(chats: chats);
+      state = state.copyWith(chats: _sortChats(chats));
     } catch (_) {
       state = state.copyWith(error: 'No se pudieron cargar los chats');
     } finally {

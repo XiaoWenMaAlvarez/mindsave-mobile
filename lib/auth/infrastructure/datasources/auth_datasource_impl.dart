@@ -10,6 +10,15 @@ class AuthDatasourceImpl extends AuthDatasource {
     dio = Dio(BaseOptions(baseUrl: Environment.apiUrlBase));
   }
 
+  bool _isConnectionError(DioException e) {
+    if (e.response != null) return false;
+    return e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.unknown;
+  }
+
   @override
   Future<User> checkAuthStatus(String token) async {
     try {
@@ -21,8 +30,10 @@ class AuthDatasourceImpl extends AuthDatasource {
       return user;
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) throw WrongCredentials();
+      if (_isConnectionError(e)) throw ConnectionTimeout();
       throw CustomError("Error de Dio desconocido", 1);
     } catch (e) {
+      if (e is ConnectionTimeout) rethrow;
       throw CustomError("Error desconocido", 2);
     }
   }
@@ -38,11 +49,16 @@ class AuthDatasourceImpl extends AuthDatasource {
     } on DioException catch (e) {
       if (e.response?.statusCode == 400) throw WrongCredentials();
       if (e.response?.statusCode == 401) throw EmailNotVerified();
-      if (e.type == DioExceptionType.connectionTimeout) {
+      if (_isConnectionError(e)) {
         throw ConnectionTimeout();
       }
       throw CustomError("Error de Dio desconocido", 1);
     } catch (e) {
+      if (e is WrongCredentials ||
+          e is EmailNotVerified ||
+          e is ConnectionTimeout) {
+        rethrow;
+      }
       throw CustomError("Error que no es de Dio en la petición desconocido", 1);
     }
   }
@@ -61,7 +77,7 @@ class AuthDatasourceImpl extends AuthDatasource {
       if (e.response?.statusCode == 400) {
         return e.response?.data["error"] ?? defaultErrorMessage;
       }
-      if (e.type == DioExceptionType.connectionTimeout) {
+      if (_isConnectionError(e)) {
         return "Conexión perdida";
       }
       return defaultErrorMessage;
@@ -85,7 +101,7 @@ class AuthDatasourceImpl extends AuthDatasource {
       if (e.response?.statusCode == 404) {
         return e.response?.data["error"] ?? defaultErrorMessage;
       }
-      if (e.type == DioExceptionType.connectionTimeout) {
+      if (_isConnectionError(e)) {
         return "Conexión perdida";
       }
       return defaultErrorMessage;
@@ -105,7 +121,7 @@ class AuthDatasourceImpl extends AuthDatasource {
       );
       return null;
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
+      if (_isConnectionError(e)) {
         return "Conexión perdida";
       }
       final responseData = e.response?.data;

@@ -266,15 +266,21 @@ class _CustomHistogramState extends State<CustomHistogram> {
   }
 
   Widget _bottomTitles(double value, TitleMeta meta, Color color) {
-    final day = value.toInt() + 1;
+    final day = value.toInt();
+    if (day < 1 || day > 31) {
+      return const SizedBox();
+    }
 
-    final isDayHovered = _interactedSpotIndex == day - 1;
-
+    final isDayHovered = _interactedSpotIndex == day;
     final isImportantToShow = day % 5 == 0 || day == 1;
 
     if (!isImportantToShow && !isDayHovered) {
       return const SizedBox();
     }
+
+    final isAdjacentToHovered =
+        _interactedSpotIndex != -1 &&
+        (day == _interactedSpotIndex - 1 || day == _interactedSpotIndex + 1);
 
     return SideTitleWidget(
       meta: meta,
@@ -283,11 +289,9 @@ class _CustomHistogramState extends State<CustomHistogram> {
         style: TextStyle(
           color: isDayHovered
               ? color
-              : _interactedSpotIndex != day && _interactedSpotIndex + 2 != day
-              ? color
-              : day == 1
-              ? color
-              : color.withValues(alpha: 0.2),
+              : isAdjacentToHovered
+              ? color.withValues(alpha: 0.2)
+              : color,
           fontSize: 12,
         ),
       ),
@@ -305,7 +309,7 @@ class _CustomHistogramState extends State<CustomHistogram> {
     }
 
     setState(() {
-      _interactedSpotIndex = touchResponse.lineBarSpots!.first.x.toInt() - 1;
+      _interactedSpotIndex = touchResponse.lineBarSpots!.first.x.toInt();
     });
   }
 

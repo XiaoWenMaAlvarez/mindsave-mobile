@@ -23,26 +23,26 @@ class SentimientosAnsiedadFisicaTestBreveResponse {
     required this.inestabilidadHormigueos,
   }) : assert(
          palpitaciones >= 0 &&
-             palpitaciones <= 5 &&
+             palpitaciones <= 4 &&
              sudoracion >= 0 &&
-             sudoracion <= 5 &&
+             sudoracion <= 4 &&
              temblores >= 0 &&
-             temblores <= 5 &&
+             temblores <= 4 &&
              dificultadRespirar >= 0 &&
-             dificultadRespirar <= 5 &&
+             dificultadRespirar <= 4 &&
              ahogo >= 0 &&
-             ahogo <= 5 &&
+             ahogo <= 4 &&
              dolorPecho >= 0 &&
-             dolorPecho <= 5 &&
+             dolorPecho <= 4 &&
              nauseas >= 0 &&
-             nauseas <= 5 &&
+             nauseas <= 4 &&
              mareos >= 0 &&
-             mareos <= 5 &&
+             mareos <= 4 &&
              sensacionIrrealidad >= 0 &&
-             sensacionIrrealidad <= 5 &&
+             sensacionIrrealidad <= 4 &&
              inestabilidadHormigueos >= 0 &&
-             inestabilidadHormigueos <= 5,
-         'Los valores deben estar entre 0 y 5',
+             inestabilidadHormigueos <= 4,
+         'Los valores deben estar entre 0 y 4',
        );
 
   int get totalScore {
@@ -74,7 +74,7 @@ class SentimientosAnsiedadFisicaTestBreveResponse {
     if (totalScore <= 30) {
       return 'Síntomas físicos de ansiedad severa';
     }
-    if (totalScore <= 30) {
+    if (totalScore <= 40) {
       return 'Síntomas físicos de ansiedad extrema';
     }
     return 'Error en el cálculo de síntomas físicos de ansiedad';

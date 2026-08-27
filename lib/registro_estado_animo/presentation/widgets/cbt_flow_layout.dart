@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mindsave/home/presentation/widgets/widgets.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 import 'package:mindsave/registro_estado_animo/presentation/widgets/custom_bottom_navigation.dart';
@@ -344,6 +345,7 @@ enum CbtLeaveChoice { save, discard }
 Future<bool> confirmCbtLeave(
   BuildContext context, {
   required Future<void> Function() onSave,
+  void Function()? onDiscard,
 }) async {
   final choice = await showDialog<CbtLeaveChoice>(
     context: context,
@@ -370,7 +372,11 @@ Future<bool> confirmCbtLeave(
     ),
   );
   if (choice == null) return false;
-  if (choice == CbtLeaveChoice.save) await onSave();
+  if (choice == CbtLeaveChoice.save) {
+    await onSave();
+  } else if (choice == CbtLeaveChoice.discard) {
+    onDiscard?.call();
+  }
   return true;
 }
 
@@ -378,4 +384,48 @@ void showCbtMessage(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message)));
+}
+
+class CbtRecordNotFoundView extends StatelessWidget {
+  const CbtRecordNotFoundView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.sentiment_dissatisfied_outlined,
+              size: 48,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No pudimos encontrar este registro',
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Es posible que haya sido eliminado o no se pudo cargar desde el servidor.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => context.push('/registros'),
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('Volver a mis registros'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -13,16 +13,16 @@ class DepresionTestBreveResponse {
     required this.perdidaDeSatisfaccion,
   }) : assert(
          tristeza >= 0 &&
-             tristeza <= 5 &&
+             tristeza <= 4 &&
              desesperanza >= 0 &&
-             desesperanza <= 5 &&
+             desesperanza <= 4 &&
              bajaAutoestima >= 0 &&
-             bajaAutoestima <= 5 &&
+             bajaAutoestima <= 4 &&
              faltaDeValor >= 0 &&
-             faltaDeValor <= 5 &&
+             faltaDeValor <= 4 &&
              perdidaDeSatisfaccion >= 0 &&
-             perdidaDeSatisfaccion <= 5,
-         'Los valores deben estar entre 0 y 5',
+             perdidaDeSatisfaccion <= 4,
+         'Los valores deben estar entre 0 y 4',
        );
 
   int get totalScore {

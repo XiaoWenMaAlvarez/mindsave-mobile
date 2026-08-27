@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:pdf/pdf.dart';
@@ -31,8 +31,8 @@ class TestBreveResultsExporter {
   static const _pdfHeaders = <String>[
     'Fecha',
     'Ansiedad emocional (0-20)',
-    'Ansiedad fisica (0-40)',
-    'Estado de animo (0-20)',
+    'Ansiedad física (0-40)',
+    'Estado de ánimo (0-20)',
     'Seguridad personal (0-8)',
     'Notas',
   ];
@@ -45,7 +45,7 @@ class TestBreveResultsExporter {
     final document = pw.Document(
       title: 'Resultados de test breve $year',
       author: 'MindSave',
-      subject: 'Seguimiento anual del estado de animo',
+      subject: 'Seguimiento anual del estado de ánimo',
     );
     final accent = PdfColor.fromHex('#6D5BD0');
     final border = PdfColor.fromHex('#D9D4E8');
@@ -63,7 +63,7 @@ class TestBreveResultsExporter {
               style: pw.TextStyle(fontSize: 8, color: muted),
             ),
             pw.Text(
-              'Pagina ${context.pageNumber} de ${context.pagesCount}',
+              'Página ${context.pageNumber} de ${context.pagesCount}',
               style: pw.TextStyle(fontSize: 8, color: muted),
             ),
           ],
@@ -79,7 +79,7 @@ class TestBreveResultsExporter {
           ),
           pw.SizedBox(height: 5),
           pw.Text(
-            'Anio $year - ${orderedTests.length} ${orderedTests.length == 1 ? 'evaluacion' : 'evaluaciones'}',
+            'Año $year - ${orderedTests.length} ${orderedTests.length == 1 ? 'evaluación' : 'evaluaciones'}',
             style: pw.TextStyle(fontSize: 11, color: muted),
           ),
           pw.SizedBox(height: 18),
@@ -90,7 +90,7 @@ class TestBreveResultsExporter {
                 border: pw.Border.all(color: border),
                 borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
               ),
-              child: pw.Text('No hay evaluaciones registradas para este anio.'),
+              child: pw.Text('No hay evaluaciones registradas para este año.'),
             )
           else
             pw.TableHelper.fromTextArray(
@@ -122,7 +122,7 @@ class TestBreveResultsExporter {
             ),
           pw.SizedBox(height: 14),
           pw.Text(
-            'Estos resultados permiten observar tendencias y no reemplazan una evaluacion profesional.',
+            'Estos resultados permiten observar tendencias y no reemplazan una evaluación profesional.',
             style: pw.TextStyle(fontSize: 8.5, color: muted),
           ),
         ],
@@ -187,7 +187,7 @@ class TestBreveResultsExporter {
     test.sentimientosAnsiedadFisicaTestBreve.totalScore,
     test.depresionTestBreve.totalScore,
     test.impulsoSuicidaTestBreve.totalScore,
-    _ascii(_singleLine(test.notas)),
+    _sanitizePdfText(_singleLine(test.notas)),
   ];
 
   static String _formatDate(DateTime date) =>
@@ -197,28 +197,22 @@ class TestBreveResultsExporter {
   static String _singleLine(String? value) =>
       value?.trim().replaceAll(RegExp(r'\s+'), ' ') ?? '';
 
-  static String _ascii(String value) {
-    const replacements = {
-      'á': 'a',
-      'é': 'e',
-      'í': 'i',
-      'ó': 'o',
-      'ú': 'u',
-      'ü': 'u',
-      'ñ': 'n',
-      'Á': 'A',
-      'É': 'E',
-      'Í': 'I',
-      'Ó': 'O',
-      'Ú': 'U',
-      'Ü': 'U',
-      'Ñ': 'N',
+  static String _sanitizePdfText(String value) {
+    const typography = {
+      '“': '"',
+      '”': '"',
+      '‘': "'",
+      '’': "'",
+      '–': '-',
+      '—': '-',
+      '…': '...',
+      '•': '-',
     };
     var normalized = value;
-    for (final entry in replacements.entries) {
+    for (final entry in typography.entries) {
       normalized = normalized.replaceAll(entry.key, entry.value);
     }
-    return normalized.replaceAll(RegExp(r'[^\x20-\x7E]'), '?');
+    return normalized.replaceAll(RegExp(r'[^\x20-\x7E\xA0-\xFF]'), '');
   }
 
   static String _worksheet(List<List<Object>> rows) {

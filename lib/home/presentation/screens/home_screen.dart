@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/auth/presentation/providers/auth_provider.dart';
@@ -18,14 +18,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedMood = 3;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final savedMood = await ref
+          .read(localStorageServiceProvider)
+          .getValue<int>('quickMood');
+      if (savedMood != null && mounted) {
+        setState(() => _selectedMood = savedMood);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final userName = ref.watch(authProvider).user?.name.trim();
     final firstName = userName == null || userName.isEmpty
         ? ''
         : userName.split(RegExp(r'\s+')).first;
-    final greeting = firstName.isEmpty
+    final hour = DateTime.now().hour;
+    final timeGreeting = hour >= 6 && hour < 12
         ? 'Buenos días'
-        : 'Buenos días, $firstName';
+        : hour >= 12 && hour < 20
+        ? 'Buenas tardes'
+        : 'Buenas noches';
+    final greeting = firstName.isEmpty
+        ? timeGreeting
+        : '$timeGreeting, $firstName';
     final pendingRecords = ref
         .watch(registroEstadoDeAnimoProvider)
         .registros
@@ -64,6 +83,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     selectedMood: _selectedMood,
                     onSelected: (value) {
                       setState(() => _selectedMood = value);
+                      ref
+                          .read(localStorageServiceProvider)
+                          .setKeyValue<int>('quickMood', value);
                       ScaffoldMessenger.of(context)
                         ..hideCurrentSnackBar()
                         ..showSnackBar(

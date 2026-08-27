@@ -7,10 +7,10 @@ class ImpulsoSuicidaTestBreveResponse {
     required this.deseosDeMorir,
   }) : assert(
          pensamientosSuicidas >= 0 &&
-             pensamientosSuicidas <= 5 &&
+             pensamientosSuicidas <= 4 &&
              deseosDeMorir >= 0 &&
-             deseosDeMorir <= 5,
-         'Los valores deben estar entre 0 y 5',
+             deseosDeMorir <= 4,
+         'Los valores deben estar entre 0 y 4',
        );
 
   int get totalScore {

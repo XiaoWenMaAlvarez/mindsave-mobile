@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +37,18 @@ void main() {
     expect(xml, contains('Angustiado'));
     expect(xml, contains('Pensamiento todo o nada'));
     expect(xml, contains('Puedo resolverlo paso a paso'));
+  });
+
+  test('prueba de caracteres españoles en pdf', () async {
+    final record = _completedRecord();
+    final pdf = await CbtRecordExporter.pdf(record);
+
+    expect(pdf.fileName, 'mindsave_registro_cbt_2026-08-18_reg-1234.pdf');
+    expect(ascii.decode(pdf.bytes.take(4).toList()), '%PDF');
+    expect(pdf.bytes.length, greaterThan(800));
+
+    final pdfString = latin1.decode(pdf.bytes, allowInvalid: true);
+    expect(pdfString, contains('Registro individual de estado de ánimo'));
   });
 }
 

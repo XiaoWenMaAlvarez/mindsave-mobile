@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mindsave necesita acceso a tu galería para adjuntar imágenes en las conversaciones de apoyo.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Mindsave necesita acceso a la cámara para tomar fotos y adjuntarlas en las conversaciones.</string>
 </dict>
 </plist>

@@ -1,16 +1,7 @@
-﻿import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:mindsave/registro_estado_animo/domain/datasources/registro_estado_animo_datasource.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
 import 'package:mindsave/shared/infrastructure/http/authenticated_http_client.dart';
-
-import 'package:flutter/foundation.dart';
-
-void logJson(Map<String, dynamic> json) {
-  const encoder = JsonEncoder.withIndent('  ');
-  final pretty = encoder.convert(json);
-  debugPrint(pretty, wrapWidth: 1024);
-}
 
 class RegistroEstadoDeAnimoAPIDatasource extends RegistroEstadoAnimoDatasource {
   static final _readCachePattern = RegExp(r'/api/registro-estado-de-animo/');
@@ -25,8 +16,7 @@ class RegistroEstadoDeAnimoAPIDatasource extends RegistroEstadoAnimoDatasource {
   Future<String> saveRegistroEstadoDeAnimo(
     RegistroEstadoAnimo registroEstadoAnimo,
   ) async {
-    Map<String, dynamic> registroEstadoAnimoJson = registroEstadoAnimo.toJson();
-    logJson(registroEstadoAnimoJson);
+    final registroEstadoAnimoJson = registroEstadoAnimo.toJson();
 
     final response = await dio.post(
       "/api/registro-estado-de-animo/",
@@ -101,7 +91,7 @@ class RegistroEstadoDeAnimoAPIDatasource extends RegistroEstadoAnimoDatasource {
     );
 
     if (response.statusCode != 200) {
-      throw Exception("Error al editar el test breve estado de ánimo");
+      throw Exception("Error al editar el registro de estado de ánimo");
     }
 
     await httpClient.invalidate(_readCachePattern);

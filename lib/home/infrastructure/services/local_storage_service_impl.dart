@@ -1,4 +1,4 @@
-﻿import 'package:mindsave/home/infrastructure/services/local_storage_service.dart';
+import 'package:mindsave/home/infrastructure/services/local_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageServiceImpl implements LocalStorageService {
@@ -17,6 +17,14 @@ class LocalStorageServiceImpl implements LocalStorageService {
       await sharedPreferences.setBool(key, value);
       return;
     }
+    if (value is int) {
+      await sharedPreferences.setInt(key, value);
+      return;
+    }
+    if (value is double) {
+      await sharedPreferences.setDouble(key, value);
+      return;
+    }
     throw UnimplementedError(
       "Método no implementado para. ${value.runtimeType}",
     );
@@ -30,6 +38,12 @@ class LocalStorageServiceImpl implements LocalStorageService {
     }
     if (T == bool) {
       return sharedPreferences.getBool(key) as T?;
+    }
+    if (T == int) {
+      return sharedPreferences.getInt(key) as T?;
+    }
+    if (T == double) {
+      return sharedPreferences.getDouble(key) as T?;
     }
     throw UnimplementedError("Método no implementado para. $T");
   }

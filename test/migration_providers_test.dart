@@ -1,4 +1,4 @@
-﻿import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
+import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,9 +16,11 @@ import 'package:mindsave/externalizacion_de_voces/presentation/providers/chats_l
 import 'package:mindsave/externalizacion_de_voces/presentation/providers/user_provider.dart';
 import 'package:mindsave/externalizacion_de_voces/presentation/screens/externalizacion_voces_chat_screen.dart';
 import 'package:mindsave/home/infrastructure/services/local_storage_service.dart';
+import 'package:mindsave/home/infrastructure/services/local_storage_service_impl.dart';
 import 'package:mindsave/home/presentation/providers/selected_menu_item_provider.dart';
 import 'package:mindsave/test_breve_estado_animo/presentation/providers/is_loading_provider.dart';
 import 'package:mindsave/test_breve_estado_animo/presentation/providers/selected_year_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('AuthState permite eliminar explícitamente el usuario', () {
@@ -206,23 +208,171 @@ void main() {
   });
 
   test(
-    'ChatsListNotifier restablece loading cuando falla la creación',
+    'ChatsListNotifier distingue error de duplicado vs error general',
     () async {
-      final repository = _FakeChatRepository(failCreate: true);
+      final dupRepo = _FakeChatRepository(failCreate: true);
+      final containerDup = ProviderContainer(
+        overrides: [chatIaRepositoryProvider.overrideWithValue(dupRepo)],
+      );
+      addTearDown(containerDup.dispose);
+
+      await containerDup
+          .read(chatListProvider.notifier)
+          .addChat(title: 'Duplicado');
+      expect(
+        containerDup.read(chatListProvider).error,
+        'Nombre del chat ya usado',
+      );
+
+      final genRepo = _FakeChatRepository(failCreateGeneric: true);
+      final containerGen = ProviderContainer(
+        overrides: [chatIaRepositoryProvider.overrideWithValue(genRepo)],
+      );
+      addTearDown(containerGen.dispose);
+
+      await containerGen
+          .read(chatListProvider.notifier)
+          .addChat(title: 'General Error');
+      expect(
+        containerGen.read(chatListProvider).error,
+        'No se pudo crear el chat. Inténtalo nuevamente.',
+      );
+    },
+  );
+
+  test(
+    'ChatsListNotifier agrega el saludo inicial localmente al crear un chat',
+    () async {
+      final repo = _FakeChatRepository(responses: ['¡Hola! ¿En qué te ayudo?']);
       final container = ProviderContainer(
-        overrides: [chatIaRepositoryProvider.overrideWithValue(repository)],
+        overrides: [chatIaRepositoryProvider.overrideWithValue(repo)],
       );
       addTearDown(container.dispose);
 
       await container
           .read(chatListProvider.notifier)
-          .addChat(title: 'Duplicado');
+          .addChat(title: 'Nuevo Chat');
       final state = container.read(chatListProvider);
 
-      expect(state.isLoading, isFalse);
-      expect(state.error, isNotNull);
+      expect(state.chats.length, 1);
+      expect(state.chats.first.mensajes.length, 2);
+      expect(state.chats.first.mensajes[0].text, 'Hola');
+      expect(state.chats.first.mensajes[0].role, 'user');
+      expect(state.chats.first.mensajes[1].text, '¡Hola! ¿En qué te ayudo?');
+      expect(state.chats.first.mensajes[1].role, 'assistant');
     },
   );
+
+  test('ChatsListNotifier ordena los chats por mensaje más reciente', () async {
+    final now = DateTime.now();
+    final olderChat = ChatHistoryChatIa(
+      id: 'old-1',
+      title: 'Antiguo',
+      mensajes: [
+        MensajeChatIa(
+          id: 'm-old',
+          text: 'Mensaje viejo',
+          createdAt: now.subtract(const Duration(hours: 5)),
+          role: 'user',
+          archivos: const [],
+        ),
+      ],
+    );
+    final newerChat = ChatHistoryChatIa(
+      id: 'new-1',
+      title: 'Reciente',
+      mensajes: [
+        MensajeChatIa(
+          id: 'm-new',
+          text: 'Mensaje reciente',
+          createdAt: now,
+          role: 'user',
+          archivos: const [],
+        ),
+      ],
+    );
+
+    final repo = _FakeChatRepository(chatsList: [olderChat, newerChat]);
+    final container = ProviderContainer(
+      overrides: [chatIaRepositoryProvider.overrideWithValue(repo)],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(chatListProvider.notifier).loadPreviousChats();
+    final chats = container.read(chatListProvider).chats;
+
+    expect(chats.first.id, 'new-1');
+    expect(chats.last.id, 'old-1');
+  });
+
+  test(
+    'LocalStorageServiceImpl persiste y lee tipos String, bool, int y double',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = LocalStorageServiceImpl();
+
+      await storage.setKeyValue<String>('stringKey', 'mindsave');
+      await storage.setKeyValue<bool>('boolKey', true);
+      await storage.setKeyValue<int>('quickMood', 3);
+      await storage.setKeyValue<double>('score', 4.5);
+
+      expect(await storage.getValue<String>('stringKey'), 'mindsave');
+      expect(await storage.getValue<bool>('boolKey'), isTrue);
+      expect(await storage.getValue<int>('quickMood'), 3);
+      expect(await storage.getValue<double>('score'), 4.5);
+
+      await storage.removeKey('quickMood');
+      expect(await storage.getValue<int>('quickMood'), isNull);
+    },
+  );
+
+  test(
+    'ChatsListNotifier conserva el chat creado aunque falle el stream inicial de IA',
+    () async {
+      final repo = _FakeChatRepositoryWithFailingStream();
+      final container = ProviderContainer(
+        overrides: [chatIaRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(chatListProvider.notifier)
+          .addChat(title: 'Chat Resiliente');
+      final state = container.read(chatListProvider);
+
+      expect(state.chats.length, 1);
+      expect(state.chats.first.title, 'Chat Resiliente');
+      expect(state.chats.first.mensajes.length, 1);
+      expect(state.chats.first.mensajes.first.text, 'Hola');
+      expect(state.isLoading, isFalse);
+    },
+  );
+}
+
+class _FakeChatRepositoryWithFailingStream
+    implements ExternalizacionDeVocesRepository {
+  @override
+  Future<ChatHistoryChatIa> createNewChat(String title) async {
+    return ChatHistoryChatIa(id: 'chat-resilient', title: title, mensajes: []);
+  }
+
+  @override
+  Future<void> deleteChat(String idChat) async {}
+
+  @override
+  Future<List<ChatHistoryChatIa>> getChatsByUser() async => [];
+
+  @override
+  Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) async => null;
+
+  @override
+  Stream<String> sendMessageToChat(
+    String idChat,
+    String prompt, {
+    List<XFile> files = const [],
+  }) {
+    return Stream.error(Exception('Network timeout during stream'));
+  }
 }
 
 ProviderContainer _chatContainer(_FakeChatRepository repository) {
@@ -283,17 +433,22 @@ class _FakeLocalStorageService implements LocalStorageService {
 class _FakeChatRepository implements ExternalizacionDeVocesRepository {
   final ChatHistoryChatIa? history;
   final bool failCreate;
+  final bool failCreateGeneric;
   final List<String> responses;
+  final List<ChatHistoryChatIa> chatsList;
 
   _FakeChatRepository({
     this.history,
     this.failCreate = false,
+    this.failCreateGeneric = false,
     this.responses = const ['Respuesta'],
+    this.chatsList = const [],
   });
 
   @override
   Future<ChatHistoryChatIa> createNewChat(String title) async {
     if (failCreate) throw StateError('duplicate');
+    if (failCreateGeneric) throw Exception('500 Internal Server Error');
     return ChatHistoryChatIa(id: 'chat-1', title: title, mensajes: []);
   }
 
@@ -301,7 +456,7 @@ class _FakeChatRepository implements ExternalizacionDeVocesRepository {
   Future<void> deleteChat(String idChat) async {}
 
   @override
-  Future<List<ChatHistoryChatIa>> getChatsByUser() async => [];
+  Future<List<ChatHistoryChatIa>> getChatsByUser() async => chatsList;
 
   @override
   Future<ChatHistoryChatIa?> getMessagesFromChat(String idChat) async =>

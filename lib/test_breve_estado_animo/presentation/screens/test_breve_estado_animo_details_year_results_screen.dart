@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/config/helpers/date_helper.dart';
@@ -59,13 +59,13 @@ class _TestBreveEstadoAnimoDetailsYearResultsScreenState
     final tests =
         ref
             .watch(testBreveEstadoDeAnimoProvider)
-            .where((test) => test.fechaCreacion.year == selectedYear)
+            .where((test) => test.fechaCreacion.toLocal().year == selectedYear)
             .toList()
           ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
     final testsByMonth = List.generate(
       12,
       (monthIndex) => tests
-          .where((test) => test.fechaCreacion.month == monthIndex + 1)
+          .where((test) => test.fechaCreacion.toLocal().month == monthIndex + 1)
           .toList(),
     );
 
@@ -277,8 +277,10 @@ class _YearSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeMonths = tests.map((test) => test.fechaCreacion.month).toSet();
-    final latest = tests.isEmpty ? null : tests.first.fechaCreacion;
+    final activeMonths = tests
+        .map((test) => test.fechaCreacion.toLocal().month)
+        .toSet();
+    final latest = tests.isEmpty ? null : tests.first.fechaCreacion.toLocal();
 
     return MindsaveSectionCard(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 17),
@@ -658,7 +660,7 @@ class _DayResultTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final date = test.fechaCreacion;
+    final date = test.fechaCreacion.toLocal();
 
     return Semantics(
       button: true,

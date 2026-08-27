@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsave/registro_estado_animo/domain/entities/entities.dart';
@@ -61,10 +61,12 @@ class _RegistroEstadoAnimoPendingViewStep1To3ScreenState
       title: _stepTitles[_currentStep],
       description: _stepDescriptions[_currentStep],
       body: record == null
-          ? const MindsaveLoadingView(
-              compact: true,
-              message: 'Cargando tu registro…',
-            )
+          ? (state.isLoading
+                ? const MindsaveLoadingView(
+                    compact: true,
+                    message: 'Cargando tu registro…',
+                  )
+                : const CbtRecordNotFoundView())
           : MindsaveSectionCard(
               padding: const EdgeInsets.fromLTRB(8, 10, 8, 14),
               child: AnimatedSwitcher(
